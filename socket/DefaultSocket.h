@@ -15,6 +15,7 @@ public:
 public:
 	DefaultSocket() :m_port(-1), m_socket(-1){ open(); }
 	DefaultSocket(int);
+    DefaultSocket(int,const std::string&,port_type);
 	~DefaultSocket() { if (isOpen()) close(); }
 
 	bool open();
@@ -23,7 +24,7 @@ public:
 	bool isOpen() { return m_socket != -1; }
 
 	bool bind(port_type, const std::string&);	// 客户端服务器均可以绑定地址，不过客户端可以由系统分配不用显式调用
-	bool isBound() { return m_port != -1 && !m_addr.empty(); }
+    bool isBound() { return m_port != (unsigned short)(-1) && !m_addr.empty(); }
 
 	std::string read(int);
 	size_t write(const char*);

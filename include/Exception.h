@@ -1,6 +1,8 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
+#include <cstddef>
+
 namespace Lib {
 
 #define THROW_EXCEPTION(e,message) (throw e(message,__FILE__,__LINE__))
@@ -8,7 +10,7 @@ namespace Lib {
 	// 异常类基类，抽象类
 	class Exception {
 	public:
-		Exception(const char* mssage = nullptr);
+		Exception(const char* mssage = NULL);
 		Exception(const char* message, const char* file, int line);
 		Exception(const Exception&);
 

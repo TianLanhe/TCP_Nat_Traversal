@@ -11,6 +11,7 @@ LIB_BEGIN
 class DefaultServerSocket : public ServerSocket {
 public:
 	DefaultServerSocket() :m_bIsListen(false) { }
+    explicit DefaultServerSocket(int socket);
 
 	bool open() { return m_socket.open(); }
 	bool isOpen() { return m_socket.isOpen(); }
@@ -31,7 +32,6 @@ public:
 	std::string getAddr() { return m_socket._addr(); }
 
 protected:
-	explicit DefaultServerSocket(int socket);
 
 protected:
 	DefaultSocket m_socket;

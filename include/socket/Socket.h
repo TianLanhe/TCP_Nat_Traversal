@@ -13,7 +13,6 @@ public:
 
 public:
 	Socket() {}
-	virtual ~Socket() {}
 
 	virtual bool open() = 0;
 	virtual bool close() = 0;

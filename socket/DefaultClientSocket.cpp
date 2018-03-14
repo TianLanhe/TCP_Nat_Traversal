@@ -16,6 +16,12 @@ DefaultClientSocket::DefaultClientSocket(int socket) :m_socket(socket)
 		m_bHasConnect = true;
 }
 
+DefaultClientSocket::DefaultClientSocket(int socket,const string& addr,port_type port) :m_socket(socket,addr,port)
+{
+    if (m_socket._socket() != -1)
+        m_bHasConnect = true;
+}
+
 bool DefaultClientSocket::close()
 {
 	int ret = m_socket.close();
@@ -47,7 +53,7 @@ bool DefaultClientSocket::connect(const char* addr, port_type port)
 	if (!isBound())
 		m_socket.updateAddrAndPort();
 
-	CHECK_STATE_EXCEPTION(m_socket._port() != -1 && m_socket._addr() != "");
+    CHECK_STATE_EXCEPTION(m_socket._port() != (unsigned short)(-1) && m_socket._addr() != "");
 
 	return true;
 }

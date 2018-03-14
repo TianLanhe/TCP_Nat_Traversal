@@ -13,7 +13,7 @@ LIB_BEGIN
 		THROW_EXCEPTION(IndexOutOfBoundsException,"Index Out Of Bounds")
 
 #define CHECK_NO_MEMORY_EXCEPTION(pointer)	\
-	if((pointer) == nullptr)				\
+	if((pointer) == NULL)				\
 		THROW_EXCEPTION(NoMemoryException,"No Enough Memory To Create Object")
 
 #define CHECK_PARAMETER_EXCEPTION(cond)	\
@@ -31,7 +31,7 @@ LIB_BEGIN
 class Object {
 
 public:
-	virtual ~Object() = 0 {}
+	virtual ~Object(){ }
 
 };
 

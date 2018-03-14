@@ -8,14 +8,13 @@ LIB_BEGIN
 
 #define DEFAULT_READ_BYTE 512
 
-class DefaultServerSocket;
-
 class DefaultClientSocket : public ClientSocket
 {
-	friend class DefaultServerSocket;	// server socket 要使用保护的构造函数，所以声明为友元
 
 public:
 	DefaultClientSocket() :m_bHasConnect(false) { }
+	explicit DefaultClientSocket(int socket);		// 本来想写成protected的，但是这样得申明DefaultServerSocket是它的友元，想想还是这么处理吧
+    DefaultClientSocket(int socket,const std::string& addr,port_type port);
 
 	bool open() { return m_socket.open(); }
 	bool close();
@@ -34,7 +33,6 @@ public:
 	std::string getAddr() { return m_socket._addr(); }
 
 protected:
-	explicit DefaultClientSocket(int socket);
 
 	int _getMaxTryTime() { return 10; }
 

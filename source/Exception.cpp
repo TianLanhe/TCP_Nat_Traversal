@@ -1,20 +1,21 @@
 #include "../include/Exception.h"
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 
 using namespace Lib;
 
 Exception::Exception(const char* message) {
 	m_message = strdup(message);
-	m_location = nullptr;
+	m_location = NULL;
 }
 
 Exception::Exception(const char* message, const char* file, int line) {
 	m_message = strdup(message);
 
-	if (file != nullptr) {
+	if (file != NULL) {
 		char buffer[16] = { 0 };
-		itoa(line, buffer, 10);
+		sprintf(buffer,"%d",line);
 
 		// m_location = new char[strlen(file) + strlen(buffer) + 2];
 		// m_location = (char*)::operator new(strlen(file) + strlen(buffer) + 2);
@@ -27,7 +28,7 @@ Exception::Exception(const char* message, const char* file, int line) {
 		}
 	}
 	else {
-		m_location = nullptr;
+		m_location = NULL;
 	}
 }
 

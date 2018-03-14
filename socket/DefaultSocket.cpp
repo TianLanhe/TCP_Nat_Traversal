@@ -21,6 +21,16 @@ DefaultSocket::DefaultSocket(int socket)
 	}
 }
 
+DefaultSocket::DefaultSocket(int socket,const string& addr,port_type port){
+    invalid();
+
+    m_socket = socket;
+    if(socket != -1){
+        m_port = port;
+        m_addr = addr;
+    }
+}
+
 bool DefaultSocket::open()
 {
 	CHECK_OPERATION_EXCEPTION(!isOpen());
@@ -64,7 +74,7 @@ size_t DefaultSocket::write(const char* content)
 {
 	CHECK_OPERATION_EXCEPTION(isOpen() && content);
 
-	int write_byte = ::write(m_socket, content, strlen(content));
+    int write_byte = ::write(m_socket, content, strlen(content));
 
 	if (write_byte == -1)
 		return false;
@@ -86,7 +96,7 @@ bool DefaultSocket::bind(port_type port, const std::string& addr) {
 	socklen_t len = sizeof(cli_addr);
 
 	cli_addr.sin_family = AF_INET;
-	cli_addr.sin_addr.s_addr = (addr.empty() ? htonl(INADDR_ANY) :inet_addr(addr));
+	cli_addr.sin_addr.s_addr = (addr.empty() ? htonl(INADDR_ANY) : inet_addr(addr.c_str()));
 	cli_addr.sin_port = htons(port);
 
 	int state = ::bind(m_socket, (struct sockaddr*)&cli_addr, len);
@@ -94,7 +104,7 @@ bool DefaultSocket::bind(port_type port, const std::string& addr) {
 	if (state == -1)
 		return false;
 
-	m_addr = (addr.empty() ? inet_ntoa(htonl(INADDR_ANY)) : addr);
+	m_addr = (addr.empty() ? inet_ntoa(cli_addr.sin_addr) : addr);
 	m_port = port;
 
 	return true;
@@ -103,8 +113,8 @@ bool DefaultSocket::bind(port_type port, const std::string& addr) {
 void DefaultSocket::updateAddrAndPort() {
 	struct sockaddr_in cli_addr;
 	socklen_t len = sizeof(cli_addr);
-	getpeername(m_socket, (struct sockaddr*)&cli_addr, &len);
+    getsockname(m_socket, (struct sockaddr*)&cli_addr, &len);
 
 	m_addr = inet_ntoa(cli_addr.sin_addr);
-	m_port = ntohl(cli_addr.sin_port);
+    m_port = ntohs(cli_addr.sin_port);
 }

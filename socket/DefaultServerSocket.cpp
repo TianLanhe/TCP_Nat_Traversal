@@ -54,7 +54,10 @@ bool DefaultServerSocket::listen(int num)
 
 ClientSocket* DefaultServerSocket::accept()
 {
-	int client_socket = ::accept(m_socket, NULL, NULL);
+    struct sockaddr_in cli_addr;
+    socklen_t len = sizeof(cli_addr);
 
-	return (client_socket == -1 ? NULL : new DefaultClientSocket(client_socket));
+    int client_socket = ::accept(m_socket._socket(), (struct sockaddr*)&cli_addr, &len);
+
+    return (client_socket == -1 ? NULL : new DefaultClientSocket(client_socket,inet_ntoa(cli_addr.sin_addr),ntohs(cli_addr.sin_port)));
 }
