@@ -82,7 +82,7 @@ typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() {
 	return ntohs(server_addr.sin_port);
 }
 
-std::string DefaultClientSocket::getAddr() {
+std::string DefaultClientSocket::getPeerAddr() {
 	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
 
 	struct sockaddr_in server_addr;

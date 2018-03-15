@@ -33,7 +33,7 @@ public:
 	virtual std::string getAddr() { return m_socket._addr(); }
 
 	virtual port_type getPeerPort();
-	virtual std::string getAddr();
+	virtual std::string getPeerAddr();
 
 protected:
 
