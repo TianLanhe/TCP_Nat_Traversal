@@ -43,7 +43,7 @@ bool DefaultClientSocket::connect(const char* addr, port_type port)
 
 	int try_time = 0;			//如果不成功每隔一秒连接一次，最多10次
 	while (try_time++ < _getMaxTryTime() && ::connect(m_socket._socket(), (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
-		sleep(1);
+		sleep(1);		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
 
 	if (try_time == 10)	// 连接失败
 		return false;
@@ -70,4 +70,24 @@ size_t DefaultClientSocket::write(const char* content)
 	CHECK_OPERATION_EXCEPTION(m_bHasConnect);
 
 	return m_socket.write(content);
+}
+
+typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() {
+	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
+
+	struct sockaddr_in server_addr;
+	socklen_t len = sizeof(server_addr);
+	getpeername(m_socket._socket(), (struct sockaddr*)&server_addr, &len);
+
+	return ntohs(server_addr.sin_port);
+}
+
+std::string DefaultClientSocket::getAddr() {
+	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
+
+	struct sockaddr_in server_addr;
+	socklen_t len = sizeof(server_addr);
+	getpeername(m_socket._socket(), (struct sockaddr*)&server_addr, &len);
+
+	return inet_ntoa(server_addr.sin_addr);
 }

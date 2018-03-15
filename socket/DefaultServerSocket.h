@@ -13,23 +13,23 @@ public:
 	DefaultServerSocket() :m_bIsListen(false) { }
     explicit DefaultServerSocket(int socket);
 
-	bool open() { return m_socket.open(); }
-	bool isOpen() { return m_socket.isOpen(); }
-	bool close();
+	virtual bool open() { return m_socket.open(); }
+	virtual bool isOpen() { return m_socket.isOpen(); }
+	virtual bool close();
 
-	bool bind(port_type port, const std::string& addr = "") { return m_socket.bind(port, addr); }
-	bool isBound() { return m_socket.isBound(); }
+	virtual bool bind(port_type port, const std::string& addr = "") { return m_socket.bind(port, addr); }
+	virtual bool isBound() { return m_socket.isBound(); }
 
-	std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节
-	size_t write(const char*);
+	virtual std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节
+	virtual size_t write(const char*);
 
-	bool listen(int);
-	bool isListen() { return m_bIsListen; }
+	virtual bool listen(int);
+	virtual bool isListen() { return m_bIsListen; }
 
-	ClientSocket* accept();
+	virtual ClientSocket* accept();
 
-	port_type getPort() { return m_socket._port(); }
-	std::string getAddr() { return m_socket._addr(); }
+	virtual port_type getPort() { return m_socket._port(); }
+	virtual std::string getAddr() { return m_socket._addr(); }
 
 protected:
 
