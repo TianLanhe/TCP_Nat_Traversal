@@ -72,7 +72,7 @@ size_t DefaultClientSocket::write(const char* content)
 	return m_socket.write(content);
 }
 
-typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() {
+typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() const {
 	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
 
 	struct sockaddr_in server_addr;
@@ -82,7 +82,7 @@ typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() {
 	return ntohs(server_addr.sin_port);
 }
 
-std::string DefaultClientSocket::getPeerAddr() {
+std::string DefaultClientSocket::getPeerAddr() const {
 	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
 
 	struct sockaddr_in server_addr;

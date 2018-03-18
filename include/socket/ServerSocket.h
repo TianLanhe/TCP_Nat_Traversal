@@ -11,7 +11,7 @@ class ServerSocket : public Socket
 {
 public:
 	virtual bool listen(int) = 0;
-	virtual bool isListen() = 0;
+	virtual bool isListen() const = 0;
 
 	virtual bool bind(port_type,const std::string& addr = "") = 0;
 

@@ -11,27 +11,25 @@ LIB_BEGIN
 class DefaultServerSocket : public ServerSocket {
 public:
 	DefaultServerSocket() :m_bIsListen(false) { }
-    explicit DefaultServerSocket(int socket);
+    explicit DefaultServerSocket(int socket);	// Review : 是否可以放在protected里
 
 	virtual bool open() { return m_socket.open(); }
-	virtual bool isOpen() { return m_socket.isOpen(); }
+	virtual bool isOpen() const { return m_socket.isOpen(); }
 	virtual bool close();
 
 	virtual bool bind(port_type port, const std::string& addr = "") { return m_socket.bind(port, addr); }
-	virtual bool isBound() { return m_socket.isBound(); }
+	virtual bool isBound() const { return m_socket.isBound(); }
 
 	virtual std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节
 	virtual size_t write(const char*);
 
 	virtual bool listen(int);
-	virtual bool isListen() { return m_bIsListen; }
+	virtual bool isListen() const { return m_bIsListen; }
 
 	virtual ClientSocket* accept();
 
-	virtual port_type getPort() { return m_socket._port(); }
-	virtual std::string getAddr() { return m_socket._addr(); }
-
-protected:
+	virtual port_type getPort() const { return m_socket._port(); }
+	virtual std::string getAddr() const { return m_socket._addr(); }
 
 protected:
 	DefaultSocket m_socket;

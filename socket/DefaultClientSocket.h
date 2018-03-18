@@ -18,26 +18,26 @@ public:
 
 	virtual bool open() { return m_socket.open(); }
 	virtual bool close();
-	virtual bool isOpen() { return m_socket.isOpen(); }
+	virtual bool isOpen() const { return m_socket.isOpen(); }
 
 	virtual bool bind(port_type port, const std::string& addr) { return m_socket.bind(port, addr); }
-	virtual bool isBound() { return m_socket.isBound(); }
+	virtual bool isBound() const { return m_socket.isBound(); }
 
 	virtual std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节
 	virtual size_t write(const char*);
 
 	virtual bool connect(const char*, port_type);
-	virtual bool isConnected() { return m_bHasConnect; }
+	virtual bool isConnected() const { return m_bHasConnect; }
 
-	virtual port_type getPort() { return m_socket._port(); }
-	virtual std::string getAddr() { return m_socket._addr(); }
+	virtual port_type getPort() const { return m_socket._port(); }
+	virtual std::string getAddr() const { return m_socket._addr(); }
 
-	virtual port_type getPeerPort();
-	virtual std::string getPeerAddr();
+	virtual port_type getPeerPort() const;
+	virtual std::string getPeerAddr() const;
 
 protected:
 
-	int _getMaxTryTime() { return 10; }
+	int _getMaxTryTime() const { return 10; }
 
 protected:
 	DefaultSocket m_socket;
