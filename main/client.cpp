@@ -1,28 +1,43 @@
 #include "../include/transmission/TransmissionData.h"
+#include "../include/transmission/TransmissionProxy.h"
+#include "../include/socket/DefaultSocketFactory.h"
+#include "../include/socket/ClientSocket.h"
+
 #include <iostream>
-#include "../include/json/json.h"
+#include <string>
 
 using namespace std;
 using namespace Lib;
-using namespace Json;
 
-int main(){
-	TransmissionData data;
-	data.add("int",3);
-	data.add("negative int",-12345);
-	data.add("double",123.45);
+int main(int argc,char *argv[]){
+	if(argc != 3){
+		cout << "Usage: client serverIp serverPort" << endl;
+		return 1;
+	}
 
+	string ip = argv[1];
+	string strPort = argv[2];
 	
-    Value value(Json::objectValue);
+	ClientSocket::port_type port = 0;
+	for(string::size_type i = 0;i<strPort.size();++i){
+		port = port * 10 + strPort[i] - '0';
+	}	
 
-    TransmissionData::Members members = data.getMembers();
-    for(TransmissionData::Members::size_type i = 0;i<members.size();++i)
-        value[members[i]] = data[membrs[i]];
+	ClientSocket *client = DefaultSocketFactory::GetInstance()->GetDefaultClientSocket();
 
-    FastWriter writer;
-    string strData = writer.write(value);
+	if(!client->connect(ip,port)){
+		cout << "connect to " << ip << " " << port << " error!" << endl;
+		return 1;	
+	}
 
-	cout << strData << endl;
+	TransmissionProxy proxy(client);
+
+	TransmissionData data = proxy.read();
+
+	cout << "ip: " << client->getAddr() << endl;
+	cout << "port: " << client->getPort() << endl;
+	cout << "peer_ip: " << data["ip"] << endl;
+	cout << "peer_port: " << data["port"] << endl;
 
 	return 0;
 }

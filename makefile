@@ -1,8 +1,18 @@
-Object = DefaultClientSocket.o \
-	 DefaultServerSocket.o \
-	 DefaultSocketFactory.o \
-	 DefaultSocket.o \
-	 Exception.o
+default_sock_obj = DefaultClientSocket.o \
+		DefaultServerSocket.o \
+		DefaultSocketFactory.o \
+		DefaultSocket.o
+
+reuse_sock_obj = ReuseClientSocket.o \
+		ReuseServerSocket.o \
+		ReuseSocketFactory.o \
+		$(default_sock_obj)
+
+trans_obj = TransmissionProxy.o \
+	TransmissionData.o \
+	json_reader.o \
+	json_writer.o \
+	json_value.o
 	 
 sock_inc_dir = include/socket
 json_inc_dir = include/json
@@ -20,8 +30,10 @@ icf_default_factory = include/Object.h $(icf_object)
 icf_reuse_factory = include/Object.h $(icf_object)
 
 icf_default_socket = include/Object.h $(icf_object)
-icf_default_client_socket = socket/DefaultSocket.h $(icf_default_socket)  $(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
-icf_default_server_socket = socket/DefaultSocket.h $(icf_default_socket)  $(sock_inc_dir)/ServerSocket.h $(icf_server_socket)
+icf_default_client_socket = socket/DefaultSocket.h $(icf_default_socket) \
+			$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
+icf_default_server_socket = socket/DefaultSocket.h $(icf_default_socket) \
+			$(sock_inc_dir)/ServerSocket.h $(icf_server_socket)
 
 icf_reuse_client_socket = socket/DefaultClientSocket.h $(icf_default_client_socket)
 icf_reuse_server_socket = socket/DefaultServerSocket.h $(icf_default_server_socket)
@@ -35,8 +47,11 @@ icf_autolink = json/config.h $(icf_config)
 
 icf_value = json/forwards.h $(icf_forwards)
 icf_writer_actually = json/value.h $(icf_value)
-icf_reader_actually = json/features.h $(icf_features) json/value.h $(icf_value)
-icf_json_actually = json/autolink.h $(icf_autolink) json/reader.h $(icf_reader_actually) json/writer.h $(icf_writer_actually)
+icf_reader_actually = json/features.h $(icf_features) \
+		json/value.h $(icf_value)
+icf_json_actually = json/autolink.h $(icf_autolink) \
+		json/reader.h $(icf_reader_actually) \
+		json/writer.h $(icf_writer_actually)
 
 icf_json = json/json.h $(icf_json_actually)
 icf_reader = json/reader.h $(icf_reader_actually)
@@ -45,19 +60,20 @@ icf_writer = json/writer.h $(icf_writer_actually)
 ########################################### transmission
 
 icf_trans_data = include/Object.h $(icf_object)
-icf_trans_proxy = include/Object.h $(icf_object) $(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
-			$(trans_inc_dir)/TransmissionData.h $(icf_trans_data)
+icf_trans_proxy = include/Object.h $(icf_object) \
+		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data)
 
 ########################################### target 
 
-test: mytest.o TransmissionData.o TransmissionProxy.o json_reader.o json_writer.o json_value.o Exception.o
-	g++ -o mytest mytest.o TransmissionData.o TransmissionProxy.o json_reader.o json_writer.o json_value.o Exception.o
+test: mytest.o $(trans_obj) Exception.o
+	g++ -o mytest mytest.o $(trans_obj) Exception.o
 
-client: client.o $(Object)
-	g++ -o client client.o $(Object)
+client: client.o $(trans_obj) $(default_sock_obj) Exception.o
+	g++ -o client client.o $(trans_obj) $(default_sock_obj) Exception.o
 	
-server: server.o $(Object)
-	g++ -o server server.o $(Object)
+server: server.o $(trans_obj) $(default_sock_obj) Exception.o
+	g++ -o server server.o $(trans_obj) $(default_sock_obj) Exception.o
 
 ########################################### object
 
@@ -80,41 +96,33 @@ json_value.o: json/json_value.cpp json/value.h $(icf_value) json/writer.h $(icf_
 mytest.o: mytest.cpp $(trans_inc_dir)/TransmissionData.h $(icf_trans_data) $(json_inc_dir)/json.h $(icf_json)
 	g++ -c mytest.cpp
 
-client.o: client.cpp \
-	$(sock_inc_dir)/DefaultSocketFactory.h \
-	$(sock_inc_dir)/ClientSocket.h \
-	$(sock_inc_dir)/Socket.h \
-	include/Object.h \
-	include/Exception.h
-	g++ -c client.cpp
+client.o: main/client.cpp \
+	$(sock_inc_dir)/DefaultSocketFactory.h $(icf_default_factory) \
+	$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+	$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
+	$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
+	g++ -c main/client.cpp
 	
-server.o: server.cpp \
-	$(sock_inc_dir)/DefaultSocketFactory.h \
-	$(sock_inc_dir)/ServerSocket.h \
-	$(sock_inc_dir)/Socket.h \
-	include/Object.h \
-	include/Exception.h
-	g++ -c server.cpp
-
-###########################################
+server.o: main/server.cpp \
+	$(sock_inc_dir)/DefaultSocketFactory.h $(icf_default_factory) \
+	$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
+	$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
+	$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
+	g++ -c main/server.cpp
 	
-DefaultSocketFactory.o: $(sock_inc_dir)/DefaultSocketFactory.h \
-				socket/DefaultSocketFactory.cpp \
-				socket/DefaultServerSocket.h \
-				socket/DefaultClientSocket.h \
-				$(icf_default_client_socket) \
-				$(icf_default_server_socket)
+DefaultSocketFactory.o: $(sock_inc_dir)/DefaultSocketFactory.h $(icf_default_factory) \
+			socket/DefaultSocketFactory.cpp \
+			socket/DefaultServerSocket.h $(icf_default_server_socket) \
+			socket/DefaultClientSocket.h $(icf_default_client_socket)
 	g++ -c socket/DefaultSocketFactory.cpp
 	
-DefaultClientSocket.o: socket/DefaultClientSocket.h \
-				socket/DefaultClientSocket.cpp \
-				$(icf_default_client_socket)
+DefaultClientSocket.o: socket/DefaultClientSocket.h $(icf_default_client_socket) \
+			socket/DefaultClientSocket.cpp
 	g++ -c socket/DefaultClientSocket.cpp
 	
-DefaultServerSocket.o: socket/DefaultServerSocket.h \
-				socket/DefaultServerSocket.cpp \
-				$(icf_default_server_socket) \
-				$(icf_default_client_socket)
+DefaultServerSocket.o: socket/DefaultServerSocket.h $(icf_default_server_socket) \
+			socket/DefaultServerSocket.cpp \
+			socket/DefaultClientSocket.h $(icf_default_client_socket)
 	g++ -c socket/DefaultServerSocket.cpp
 	
 Exception.o:include/Exception.h source/Exception.cpp
