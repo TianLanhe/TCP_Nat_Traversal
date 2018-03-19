@@ -29,7 +29,8 @@ int main(int argc,char *argv[]){
 
 	while(client = server->accept()){
 		cout << "client " << client->getAddr() << ':' << client->getPort() << " has connected!" << endl;
-		
+cout << client->read(512) << endl;
+continue;
 		proxy.setSocket(client);
 
 		TransmissionData data;

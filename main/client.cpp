@@ -30,6 +30,10 @@ int main(int argc,char *argv[]){
 		return 1;	
 	}
 
+    size_t bytes = client->write("this is a line!");
+    cout << bytes << endl;
+    return 0;
+
 	TransmissionProxy proxy(client);
 
 	TransmissionData data = proxy.read();

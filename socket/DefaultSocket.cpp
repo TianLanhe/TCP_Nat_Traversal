@@ -76,11 +76,7 @@ size_t DefaultSocket::write(const char* content)
 
     int write_byte = ::write(m_socket, content, strlen(content));
 
-	if (write_byte == -1)
-		return false;
-
-	CHECK_STATE_EXCEPTION(write_byte == strlen(content));
-	return true;
+    return write_byte;
 }
 
 void DefaultSocket::invalid() {
