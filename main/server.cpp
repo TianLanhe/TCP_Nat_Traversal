@@ -1,6 +1,6 @@
 #include "../include/transmission/TransmissionData.h"
 #include "../include/transmission/TransmissionProxy.h"
-#include "../include/socket/DefaultSocketFactory.h"
+#include "../include/socket/ReuseSocketFactory.h"
 #include "../include/socket/ServerSocket.h"
 
 #include <iostream>
@@ -10,7 +10,7 @@ using namespace std;
 using namespace Lib;
 
 int main(int argc,char *argv[]){
-	ServerSocket *server = DefaultSocketFactory::GetInstance()->GetDefaultServerSocket();
+	ServerSocket *server = ReuseSocketFactory::GetInstance()->GetReuseServerSocket();
 
 	ClientSocket *client;
 	TransmissionProxy proxy;

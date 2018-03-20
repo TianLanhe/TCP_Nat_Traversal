@@ -6,7 +6,9 @@ default_sock_obj = DefaultClientSocket.o \
 reuse_sock_obj = ReuseClientSocket.o \
 		ReuseServerSocket.o \
 		ReuseSocketFactory.o \
-		$(default_sock_obj)
+		DefaultClientSocket.o \
+		DefaultServerSocket.o \
+		DefaultSocket.o
 
 trans_obj = TransmissionProxy.o \
 	TransmissionData.o \
@@ -66,14 +68,16 @@ icf_trans_proxy = include/Object.h $(icf_object) \
 
 ########################################### target 
 
+all: client server
+
 test: mytest.o $(trans_obj) Exception.o
 	g++ -o mytest mytest.o $(trans_obj) Exception.o
 
-client: client.o $(trans_obj) $(default_sock_obj) Exception.o
-	g++ -o client client.o $(trans_obj) $(default_sock_obj) Exception.o
+client: client.o $(trans_obj) $(reuse_sock_obj) Exception.o
+	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) Exception.o
 	
-server: server.o $(trans_obj) $(default_sock_obj) Exception.o
-	g++ -o server server.o $(trans_obj) $(default_sock_obj) Exception.o
+server: server.o $(trans_obj) $(reuse_sock_obj) Exception.o
+	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) Exception.o
 
 ########################################### object
 
@@ -97,18 +101,32 @@ mytest.o: mytest.cpp $(trans_inc_dir)/TransmissionData.h $(icf_trans_data) $(jso
 	g++ -c mytest.cpp
 
 client.o: main/client.cpp \
-	$(sock_inc_dir)/DefaultSocketFactory.h $(icf_default_factory) \
+	$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
 	$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
 	$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
 	$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
 	g++ -c main/client.cpp
 	
 server.o: main/server.cpp \
-	$(sock_inc_dir)/DefaultSocketFactory.h $(icf_default_factory) \
+	$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
 	$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
 	$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
 	$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
 	g++ -c main/server.cpp
+
+ReuseClientSocket.o: socket/ReuseClientSocket.cpp \
+		socket/ReuseClientSocket.h $(icf_reuse_client_socket)
+	g++ -c socket/ReuseClientSocket.cpp
+
+ReuseServerSocket.o: socket/ReuseServerSocket.cpp \
+		socket/ReuseServerSocket.h $(icf_reuse_server_socket)
+	g++ -c socket/ReuseServerSocket.cpp
+
+ReuseSocketFactory.o: socket/ReuseSocketFactory.cpp \
+		$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+		socket/ReuseServerSocket.h $(icf_reuse_server_socket) \
+		socket/ReuseClientSocket.h $(icf_reuse_client_socket)
+	g++ -c socket/ReuseSocketFactory.cpp
 	
 DefaultSocketFactory.o: $(sock_inc_dir)/DefaultSocketFactory.h $(icf_default_factory) \
 			socket/DefaultSocketFactory.cpp \
@@ -130,6 +148,17 @@ Exception.o:include/Exception.h source/Exception.cpp
 	
 DefaultSocket.o: socket/DefaultSocket.h socket/DefaultSocket.cpp $(icf_default_socket)
 	g++ -c socket/DefaultSocket.cpp
+
+###########################################
+
+uninstall_all:
+	-rm client server
+
+uninstall_client:
+	rm client
+
+uninstall_server:
+	rm server
 
 clean:
 	rm -rf *.o
