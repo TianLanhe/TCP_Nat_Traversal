@@ -170,14 +170,16 @@ int TransmissionData::getInt(const std::string& key) const {
     const string& value = m_map.at(key);
     int ret = 0;
 
-    string::size_type i = value.size();
-    while(i-->0){
-        if(value[i] == '+' || value[i] == '-')
-            break;
+	CHECK_STATE_EXCEPTION(value.size() != 0);
+	
+	bool isNegative = (value[0] == '-');
+
+    for(string::size_type i = (isNegative ? 1 : 0);i<value.size();++i){
+    	CHECK_OPERATION_EXCEPTION(value[i] >= '0' && value[i] <= '9');
         ret = ret * 10 + value[i] - '0';
     }
 
-    if(value[i] == '-')
+    if(isNegative)
         ret = -ret;
 
     return ret;
@@ -190,8 +192,8 @@ typename TransmissionData::uint TransmissionData::getUInt(const std::string& key
     const string& value = m_map.at(key);
     int ret = 0;
 
-    string::size_type i = value.size();
-    while(i-->0){
+    for(string::size_type i = 0;i<value.size();++i){
+    	CHECK_OPERATION_EXCEPTION(value[i] >= '0' && value[i] <= '9');
         ret = ret * 10 + value[i] - '0';
     }
 
@@ -204,25 +206,10 @@ double TransmissionData::getDouble(const std::string& key) const {
 
     const string& value = m_map.at(key);
     double ret = 0.0;
+    
+    int count = sscanf(value.c_str(), "%lf", &ret);
 
-    string::size_type pointPos = value.size() - 1;
-    string::size_type i = value.size();
-    while(i-->0){
-        if(value[i] == '+' || value[i] == '-')
-            break;
-        else if(value[i] == '.')
-            pointPos = i;
-        else
-            ret = ret * 10 + value[i] - '0';
-    }
-
-    if(value[i] == '-')
-        ret = -ret;
-
-    while(pointPos < value.size() - 1){
-        ret /= 10;
-        ++pointPos;
-    }
+	CHECK_OPERATION_EXCEPTION(count == 1);
 
     return ret;
 }
