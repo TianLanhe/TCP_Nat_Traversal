@@ -9,17 +9,32 @@
 using namespace std;
 using namespace Lib;
 
+ServerSocket::port_type stringToShort(const string& str){
+    ServerSocket::port_type port = 0;
+    for(string::size_type i = 0;i<str.size();++i){
+        port = port * 10 + str[i] - '0';
+    }
+    return port;
+}
+
 int main(int argc,char *argv[]){
+	if(argc != 2){
+		cout << "Usage: server port" << endl;
+		return 1;
+	}
+	
+	ServerSocket::port_type port = stringToShort(argv[1]);
+	
 	ServerSocket *server = ReuseSocketFactory::GetInstance()->GetReuseServerSocket();
 
 	ClientSocket *client;
 	TransmissionProxy proxy;
 
-	if(!server->bind(8888)){
-		cout << "server bind 8888 error!" << endl;
+	if(!server->bind(port)){
+		cout << "server bind " << port << " error!" << endl;
 		return 1;
 	}else
-		cout << "server has bound 8888 !"<< endl;
+		cout << "server has bound " << port << " !"<< endl;
 
 	if(!server->listen(5)){
 		cout << "server listen error!" << endl;

@@ -63,7 +63,8 @@ string DefaultSocket::read(int read_byte)
 	CHECK_NO_MEMORY_EXCEPTION(content);
 	content[0] = '\0';
 
-    ::read(m_socket, content, read_byte);
+    size_t b = ::read(m_socket, content, read_byte);
+	content[b] = '\0';
 
 	ret.append(content);
 
