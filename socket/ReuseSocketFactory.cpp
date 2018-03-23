@@ -6,13 +6,13 @@ using namespace Lib;
 
 ReuseSocketFactory* ReuseSocketFactory::factory = NULL;
 
-ServerSocket* ReuseSocketFactory::GetReuseServerSocket() {
+ServerSocket* ReuseSocketFactory::GetServerSocket() {
 	ServerSocket *ret = new ReuseServerSocket();
 	CHECK_NO_MEMORY_EXCEPTION(ret);
 	return ret;
 }
 
-ClientSocket* ReuseSocketFactory::GetReuseClientSocket() {
+ClientSocket* ReuseSocketFactory::GetClientSocket() {
 	ClientSocket *ret = new ReuseClientSocket();
 	CHECK_NO_MEMORY_EXCEPTION(ret);
 	return ret;

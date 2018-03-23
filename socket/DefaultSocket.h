@@ -23,7 +23,7 @@ public:
 
 	bool isOpen() const { return m_socket != -1; }
 
-	bool bind(port_type, const std::string&);	// 客户端服务器均可以绑定地址，不过客户端可以由系统分配不用显式调用
+    bool bind(const std::string&, port_type);	// 客户端服务器均可以绑定地址，不过客户端可以由系统分配不用显式调用
     bool isBound() const { return m_port != (unsigned short)(-1) && !m_addr.empty(); }
 
 	std::string read(int);

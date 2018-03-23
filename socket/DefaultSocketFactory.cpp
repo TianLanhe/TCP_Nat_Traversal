@@ -6,13 +6,13 @@ using namespace Lib;
 
 DefaultSocketFactory* DefaultSocketFactory::factory = NULL;
 
-ServerSocket* DefaultSocketFactory::GetDefaultServerSocket(){
+ServerSocket* DefaultSocketFactory::GetServerSocket(){
 	ServerSocket *ret = new DefaultServerSocket();
 	CHECK_NO_MEMORY_EXCEPTION(ret);
 	return ret;
 }
 
-ClientSocket* DefaultSocketFactory::GetDefaultClientSocket(){
+ClientSocket* DefaultSocketFactory::GetClientSocket(){
 	ClientSocket *ret = new DefaultClientSocket();
 	CHECK_NO_MEMORY_EXCEPTION(ret);
 	return ret;

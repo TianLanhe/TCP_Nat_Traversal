@@ -17,7 +17,8 @@ public:
 	virtual bool isOpen() const { return m_socket.isOpen(); }
 	virtual bool close();
 
-	virtual bool bind(port_type port, const std::string& addr = "") { return m_socket.bind(port, addr); }
+    virtual bool bind(port_type port) { return m_socket.bind("", port); }
+    virtual bool bind(const std::string& addr, port_type port) { return m_socket.bind(addr, port); }
 	virtual bool isBound() const { return m_socket.isBound(); }
 
 	virtual std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节

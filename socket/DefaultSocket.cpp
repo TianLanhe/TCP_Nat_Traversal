@@ -86,7 +86,7 @@ void DefaultSocket::invalid() {
 	m_addr = "";
 }
 
-bool DefaultSocket::bind(port_type port, const std::string& addr) {
+bool DefaultSocket::bind(const std::string& addr, port_type port) {
 	CHECK_OPERATION_EXCEPTION(isOpen() && !isBound());
 
 	struct sockaddr_in cli_addr;

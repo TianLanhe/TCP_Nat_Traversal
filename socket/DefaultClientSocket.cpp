@@ -31,10 +31,10 @@ bool DefaultClientSocket::close()
 
 	return ret == 0;
 }
-#include<iostream>
-using namespace std;
-bool DefaultClientSocket::connect(const char* addr, port_type port)
+
+bool DefaultClientSocket::connect(const char* addr, port_type port, size_t time)
 {
+    CHECK_PARAMETER_EXCEPTION(time != 0 && addr != NULL);
 	CHECK_OPERATION_EXCEPTION(!m_bHasConnect && isOpen());
 
 	struct sockaddr_in server_addr;
@@ -42,14 +42,17 @@ bool DefaultClientSocket::connect(const char* addr, port_type port)
 	server_addr.sin_port = htons(port);
 	server_addr.sin_family = AF_INET;
 
-	int try_time = 0;			//如果不成功每隔一秒连接一次，最多10次
-    while (try_time < _getMaxTryTime() && ::connect(m_socket._socket(), (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1){
+    size_t max_try_time = time < _getMaxTryTime() ? time : _getMaxTryTime();
+    size_t try_time = 0;			//如果不成功每隔一秒连接一次
+    while (try_time < max_try_time && ::connect(m_socket._socket(), (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1){
         ++try_time;
-        sleep(1);		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
+
+        if(try_time != max_try_time)
+            sleep(1);		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
     }
 
-	if (try_time == 10)	// 连接失败
-		return false;
+    if(try_time == max_try_time)
+        return false;
 
 	m_bHasConnect = true;
 

@@ -10,8 +10,8 @@ class ServerSocket;
 
 class DefaultSocketFactory : public Object {
 public:
-	ServerSocket* GetDefaultServerSocket();
-	ClientSocket* GetDefaultClientSocket();
+    ServerSocket* GetServerSocket();
+    ClientSocket* GetClientSocket();
 	static DefaultSocketFactory* GetInstance();
 
 private:

@@ -19,7 +19,8 @@ public:
 
 	virtual bool isOpen() const = 0;
 
-	virtual bool bind(port_type, const std::string&) = 0;	// 客户端服务器均可以绑定地址，不过客户端可以由系统分配不用显式调用
+    virtual bool bind(const std::string&, port_type) = 0;	// 客户端服务器均可以绑定地址，不过客户端可以由系统分配不用显式调用
+    virtual bool bind(port_type) = 0;                       // 服务器绑定时可以不指定地址，所有发到本机任意ip指定port的包都能收到
 	virtual bool isBound() const = 0;
 
 	virtual std::string read(int) = 0;

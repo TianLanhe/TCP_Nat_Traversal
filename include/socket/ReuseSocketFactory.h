@@ -10,8 +10,8 @@ class ServerSocket;
 
 class ReuseSocketFactory : public Object {
 public:
-	ServerSocket* GetReuseServerSocket();
-	ClientSocket* GetReuseClientSocket();
+    ServerSocket* GetServerSocket();
+    ClientSocket* GetClientSocket();
 	static ReuseSocketFactory* GetInstance();
 
 private:
