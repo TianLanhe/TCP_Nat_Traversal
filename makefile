@@ -15,10 +15,13 @@ trans_obj = TransmissionProxy.o \
 	json_reader.o \
 	json_writer.o \
 	json_value.o
+	
+##########################################
 	 
 sock_inc_dir = include/socket
 json_inc_dir = include/json
 trans_inc_dir = include/transmission
+nat_checker_inc_dir = include/natchecker
 
 ########################################## socket
 
@@ -65,13 +68,23 @@ icf_trans_data = include/Object.h $(icf_object)
 icf_trans_proxy = include/Object.h $(icf_object) \
 		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
 		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data)
+		
+########################################### nat_checker
+
+icf_nat_checker_common = 
+icf_nat_checker_client = include/Object.h $(icf_object) \
+						$(nat_checker_inc_dir)/NatCheckerCommon.h $(icf_nat_checker_common) \
+						$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
+icf_nat_checker_server = include/Object.h $(icf_object) \
+						$(nat_checker_inc_dir)/NatCheckerCommon.h $(icf_nat_checker_common) \
+						$(sock_inc_dir)/ServerSocket.h $(icf_server_socket)
 
 ########################################### target 
 
 all: client server
 
-test: mytest.o $(trans_obj) Exception.o
-	g++ -o mytest mytest.o $(trans_obj) Exception.o
+test: mytest.o $(trans_obj) $(reuse_sock_obj) NatCheckerServer.o Exception.o
+	g++ -o mytest mytest.o $(trans_obj) $(reuse_sock_obj) NatCheckerServer.o Exception.o -lpthread
 
 client: client.o $(trans_obj) $(reuse_sock_obj) Exception.o
 	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) Exception.o
@@ -97,7 +110,8 @@ json_writer.o: json/json_writer.cpp json/writer.h $(icf_writer_actually)
 json_value.o: json/json_value.cpp json/value.h $(icf_value) json/writer.h $(icf_writer_actually) 
 	g++ -c json/json_value.cpp
 	
-mytest.o: mytest.cpp $(trans_inc_dir)/TransmissionData.h $(icf_trans_data) $(json_inc_dir)/json.h $(icf_json)
+mytest.o: mytest.cpp \
+	$(nat_checker_inc_dir)/NatCheckerClient.h $(icf_nat_checker_client)
 	g++ -c mytest.cpp
 
 client.o: main/client.cpp \
@@ -148,6 +162,22 @@ Exception.o:include/Exception.h source/Exception.cpp
 	
 DefaultSocket.o: socket/DefaultSocket.h socket/DefaultSocket.cpp $(icf_default_socket)
 	g++ -c socket/DefaultSocket.cpp
+
+NatCheckerClient.o: natchecker/NatCheckerClient.cpp \
+		$(nat_checker_inc_dir)/NatCheckerClient.h $(icf_nat_checker_client) \
+		$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+		$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
+		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
+		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
+	g++ -c natchecker/NatCheckerClient.cpp
+
+NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
+		$(nat_checker_inc_dir)/NatCheckerServer.h $(icf_nat_checker_server) \
+		$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
+		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
+	g++ -c natchecker/NatCheckerServer.cpp -std=c++11
 
 ###########################################
 

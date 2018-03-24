@@ -38,6 +38,7 @@ public:
     bool getBool(const std::string& key) const;
     std::string getString(const std::string& key) const;
 
+	// 只能用于获取存在的键值
     std::string& operator[](const std::string&);
     const std::string& operator[](const std::string&) const;
 
