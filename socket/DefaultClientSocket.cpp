@@ -24,12 +24,12 @@ DefaultClientSocket::DefaultClientSocket(int socket,const string& addr,port_type
 
 bool DefaultClientSocket::close()
 {
-	int ret = m_socket.close();
+    bool ret = m_socket.close();
 
-	if (ret == 0)
+    if (ret)
 		m_bHasConnect = false;
 
-	return ret == 0;
+    return ret;
 }
 
 bool DefaultClientSocket::connect(const char* addr, port_type port, size_t time)

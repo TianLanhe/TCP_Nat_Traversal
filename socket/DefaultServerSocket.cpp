@@ -18,12 +18,12 @@ DefaultServerSocket::DefaultServerSocket(int socket) :m_socket(socket)
 
 bool DefaultServerSocket::close()
 {
-	int ret = m_socket.close();
+    bool ret = m_socket.close();
 
-	if (ret == 0)
+    if (ret)
 		m_bIsListen = false;
 
-	return ret == 0;
+    return ret;
 }
 
 string DefaultServerSocket::read(int read_byte)

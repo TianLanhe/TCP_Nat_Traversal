@@ -43,7 +43,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
 	// 服务器检查它连接过来的外部地址，若不明确类型及规律，继续让 Client 连接新端口，直到 STUN 服务器探测出需要的了，就发送停止探测的信息
 	// 服务器可将整个过程获得到的信息存储起来以便其他用途
 	
-    if(!data.isMember(LOCAL_IP) || data.isMember(LOCAL_PORT))
+    if(!data.isMember(LOCAL_IP) || !data.isMember(LOCAL_PORT))
         return;
 
     string local_ip = data.getString(LOCAL_IP);
@@ -78,7 +78,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
         if(!c->bind(server->m_another_addr,server->m_main_port))
             return;
 
-        bool canConnect = c->connect(ext_ip,ext_port);
+        bool canConnect = c->connect(ext_ip,ext_port,3);
         filter_type filterType;
         if(canConnect)
         {
@@ -87,10 +87,11 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
         else
         {
         	// 若无法连接上，则关闭原来的 Client Socket，重新打开一个，绑定地址为 IP1:Port2，并尝试连接
-            if(!c->close() || !c->open() || !c->bind(server->m_main_addr,server->m_another_port))
+            if(!(c->close() && c->open() &&
+                 c->bind(server->m_main_addr,server->m_another_port)))
                 return;
 
-            canConnect = c->connect(ext_ip,ext_port);
+            canConnect = c->connect(ext_ip,ext_port,3);
 
             if(canConnect)
                 filterType = ADDRESS_DEPENDENT;
@@ -113,7 +114,8 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
 		// 若两次差值不同，则继续循环，让 Client 继续连接，直至这边观察到连续两次差值相同或循环次数已经达到阈值为止
 		
         ServerSocket *s = ReuseSocketFactory::GetInstance()->GetServerSocket();
-        if(!s->bind(server->m_another_addr,server->m_main_port) || !s->listen(DEFAULT_LISTEN_NUM))
+        if(!(s->bind(server->m_another_addr,server->m_main_port) &&
+             s->listen(DEFAULT_LISTEN_NUM)))
             return;
 
         data.clear();
@@ -137,7 +139,6 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
         if(ext_ip2 != ext_ip){
             // TODO 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
         }
-
 
         if(ext_ip2 == ext_ip && ext_port2 == ext_port) // 第2次的外网地址与第1次的相同
         {
@@ -163,7 +164,9 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
             data.add(CHANGE_IP,server->m_another_addr);
             data.add(CHANGE_PORT,server->m_another_port);
 
-            if(!s->close() || !s->open() || !s->bind(server->m_another_addr,server->m_another_port) || !s->listen(DEFAULT_LISTEN_NUM))
+            if(!(s->close() && s->open() &&
+                 s->bind(server->m_another_addr,server->m_another_port) &&
+                 s->listen(DEFAULT_LISTEN_NUM)))
                 return;
 
             proxy.setSocket(c);
@@ -211,9 +214,9 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
                     data.add(CHANGE_IP,server->m_another_addr);
                     data.add(CHANGE_PORT,server->m_another_port + try_time);
 
-                    if(!s->close() || !s->open() ||
-                            !s->bind(server->m_another_addr,server->m_another_port + try_time) ||
-                            !s->listen(DEFAULT_LISTEN_NUM))
+                    if(!(s->close() && s->open() &&
+                            s->bind(server->m_another_addr,server->m_another_port + try_time) &&
+                            s->listen(DEFAULT_LISTEN_NUM)))
                         return;
 
                     proxy.setSocket(c);
