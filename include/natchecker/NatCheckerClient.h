@@ -6,7 +6,7 @@
 #include "../socket/ClientSocket.h"
 
 #include <string>
-#include <vector>
+//#include <vector>
 
 LIB_BEGIN
 
@@ -37,12 +37,13 @@ protected:
     NatCheckerClient(const NatCheckerClient&);	// 禁止拷贝和赋值
     NatCheckerClient& operator=(const NatCheckerClient&);
 
-    ClientSocket* _getMainSocket() const { return m_sockets.empty() ? NULL : m_sockets[0]; }
+    ClientSocket* _getMainSocket() const { return m_socket; /*return m_sockets.empty() ? NULL : m_sockets[0];*/ }
 
     bool isConnected() const { return m_isConnected; }
 
 private:
-    std::vector<ClientSocket*> m_sockets;
+    //std::vector<ClientSocket*> m_sockets;	   本来打算存储探测过程中的所有socket，特别是在探测 Map 类型时的发起连接的 socket
+    ClientSocket *m_socket;					// 因为怕关闭连接后端口归还给 NAT 后 NAT 会复用这些端口，经测试并没有影响，这里先不存储吧
     nat_type m_natType;
 
     std::string m_ext_addr;

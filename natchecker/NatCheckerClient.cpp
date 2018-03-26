@@ -7,7 +7,7 @@
 using namespace Lib;
 using namespace std;
 
-NatCheckerClient::NatCheckerClient(const string& addr, port_type port):m_isConnected(false){
+NatCheckerClient::NatCheckerClient(const string& addr, port_type port):m_isConnected(false),m_socket(NULL){
     bind(addr,port);
 }
 
@@ -17,7 +17,8 @@ bool NatCheckerClient::bind(const string& addr, port_type port){
     ClientSocket *client = ReuseSocketFactory::GetInstance()->GetClientSocket();
 
     if(client->bind(addr,port)){
-        m_sockets.push_back(client);
+        // m_sockets.push_back(client);
+        m_socket = client;
         return true;
     }else{
         return false;
@@ -25,12 +26,15 @@ bool NatCheckerClient::bind(const string& addr, port_type port){
 }
 
 bool NatCheckerClient::isBound() const {
-    return !m_sockets.empty();
+    // return !m_sockets.empty();
+    return m_socket != NULL;
 }
 
 NatCheckerClient::~NatCheckerClient(){
-    for(vector<ClientSocket*>::size_type i=0;i<m_sockets.size();++i)
-        delete m_sockets[i];
+    // for(vector<ClientSocket*>::size_type i=0;i<m_sockets.size();++i)
+    //    delete m_sockets[i];
+    if(m_socket)
+        delete m_socket;
 }
 
 std::string NatCheckerClient::getExternAddr() const {
@@ -130,10 +134,11 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
 
         ClientSocket *c = ReuseSocketFactory::GetInstance()->GetClientSocket();
         if(!c->bind(client->getAddr(),client->getPort()) || !c->connect(changeIp,changePort,1)){
+            delete c;
             return false;
-        }else{
+        }/*else{
             m_sockets.push_back(c);
-        }
+        }*/
 
         proxy.setSocket(c);
 
@@ -142,6 +147,8 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
 
         if(!data.isMember(CONTINUE))
             return false;
+
+        delete c;
 
         continued = data.getBool(CONTINUE);
     }

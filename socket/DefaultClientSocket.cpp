@@ -48,7 +48,7 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t time)
         ++try_time;
 
         if(try_time != max_try_time)
-            sleep(1);		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
+            usleep(_getSleepTime());		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
     }
 
     if(try_time == max_try_time)

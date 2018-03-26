@@ -30,7 +30,7 @@ public:
 protected:
     static void handle_request(NatCheckerServer*,ClientSocket*);
 
-    size_t _getMaxTryTime(){ return 10; }
+    size_t _getMaxTryTime(){ return 3; }
 
 private:
     ServerSocket *m_main_server;

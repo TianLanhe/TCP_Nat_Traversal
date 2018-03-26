@@ -40,6 +40,8 @@ protected:
 
     size_t _getMaxTryTime() const { return 10; }
 
+    size_t _getSleepTime() const { return 1 * 1000000; }
+
 protected:
 	DefaultSocket m_socket;
 
