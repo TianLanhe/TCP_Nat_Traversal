@@ -31,6 +31,7 @@ protected:
     static void handle_request(NatCheckerServer*,ClientSocket*);
 
     size_t _getMaxTryTime(){ return 3; }
+    size_t _getConnectRetryTime(){ return 1; }
 
 private:
     ServerSocket *m_main_server;
