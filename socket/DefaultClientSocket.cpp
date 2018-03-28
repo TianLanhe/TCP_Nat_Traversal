@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <cstdlib>
+#include <fcntl.h>
 
 using namespace std;
 using namespace Lib;
@@ -62,6 +63,12 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t time)
     CHECK_STATE_EXCEPTION(m_socket._port() != (unsigned short)(-1) && m_socket._addr() != "");
 
 	return true;
+}
+
+bool DefaultClientSocket::setNonBlock(bool flag){
+    int f = fcntl(m_socket._socket(),F_GETFL,0);
+    f = ( flag ? f | O_NONBLOCK : f & ~O_NONBLOCK);
+    return fcntl(m_socket._socket(),F_SETFL,f) == 0;
 }
 
 string DefaultClientSocket::read(int read_byte)

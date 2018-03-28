@@ -87,7 +87,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
             return;
         }
 
-        bool canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
+        bool canConnect = c->connect(ext_ip,ext_port,server->_getConnectRetryTime());
         filter_type filterType;
         if(canConnect)
         {
@@ -102,7 +102,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
                 return;
             }
 
-            canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
+            canConnect = c->connect(ext_ip,ext_port,server->_getConnectRetryTime());
 
             if(canConnect)
                 filterType = ADDRESS_DEPENDENT;

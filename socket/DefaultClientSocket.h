@@ -30,6 +30,8 @@ public:
     virtual bool connect(const char*, port_type, size_t time = (size_t)(-1));
 	virtual bool isConnected() const { return m_bHasConnect; }
 
+    virtual bool setNonBlock(bool flag = true);
+
 	virtual port_type getPort() const { return m_socket._port(); }
 	virtual std::string getAddr() const { return m_socket._addr(); }
 
