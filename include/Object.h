@@ -3,6 +3,8 @@
 
 #include "Exception.h"
 
+#include <string>
+
 #define LIB_BEGIN namespace Lib {
 #define LIB_END }
 
@@ -29,7 +31,9 @@ LIB_BEGIN
 		THROW_EXCEPTION(InvalidOperationException,"Operation Is Invalid")
 
 class Object {
-
+public:
+	typedef unsigned short port_type;
+	typedef std::string ip_type;
 public:
 	virtual ~Object(){ }
 

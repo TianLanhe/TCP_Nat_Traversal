@@ -75,7 +75,7 @@ TransmissionData TransmissionProxy::read(){
     if(strBytes.size() != 1)
         return ret;
 
-    int lengthOfSize = strBytes[0];
+    size_t lengthOfSize = strBytes[0];
     strBytes = m_socket->read(lengthOfSize);
     if(strBytes.size() != lengthOfSize)
         return ret;
