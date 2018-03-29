@@ -22,11 +22,16 @@ sock_inc_dir = include/socket
 json_inc_dir = include/json
 trans_inc_dir = include/transmission
 nat_checker_inc_dir = include/natchecker
+database_inc_dir = include/database
 
-########################################## socket
+########################################## base
 
 icf_exception = 
+icf_nat_type = 
 icf_object = include/Exception.h $(icf_exception)
+ifc_smart_pointer = include/Exception.h $(icf_exception)
+
+########################################## socket
 
 icf_socket = include/Object.h $(icf_object)
 icf_client_socket = $(sock_inc_dir)/Socket.h $(icf_socket)
@@ -71,13 +76,20 @@ icf_trans_proxy = include/Object.h $(icf_object) \
 		
 ########################################### nat_checker
 
-icf_nat_checker_common = 
+icf_nat_checker_common = include/NatType.h $(icf_nat_type)
 icf_nat_checker_client = include/Object.h $(icf_object) \
 						$(nat_checker_inc_dir)/NatCheckerCommon.h $(icf_nat_checker_common) \
 						$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
 icf_nat_checker_server = include/Object.h $(icf_object) \
 						$(nat_checker_inc_dir)/NatCheckerCommon.h $(icf_nat_checker_common) \
 						$(sock_inc_dir)/ServerSocket.h $(icf_server_socket)
+						
+########################################### database
+
+icf_database = include/NatType.h $(icf_nat_type) \
+				include/Object.h $(icf_object)
+icf_database_factory = include/Object.h $(icf_object)
+icf_default_database = $(database_inc_dir)/DataBase.h $(icf_databse)
 
 ########################################### target 
 
@@ -176,8 +188,18 @@ NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
 		$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
 		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
 		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
-		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
+		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
+		$(database_inc_dir)/DataBase.h $(icf_database)
+		
 	g++ -c natchecker/NatCheckerServer.cpp -std=c++11
+	
+DefaultDataBase.o: database/DefaultDataBase.cpp \
+		database/DefaultDataBase.h $(icf_default_database)
+	g++ -c database/DefaultDataBase.cpp
+		
+DataBaseFactory.o: database/DataBaseFactory.cpp \
+		$(database_inc_dir)/DataBaseFactory.h $(icf_database_factory)
+	g++ -c database/DataBaseFactory.cpp
 
 ###########################################
 

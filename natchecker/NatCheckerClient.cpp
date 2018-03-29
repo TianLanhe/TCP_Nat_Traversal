@@ -7,7 +7,7 @@
 using namespace Lib;
 using namespace std;
 
-NatCheckerClient::NatCheckerClient(const string& addr, port_type port):m_isConnected(false),m_socket(NULL){
+NatCheckerClient::NatCheckerClient(const string& identifier, const string& addr, port_type port):m_identifier(identifier),m_isConnected(false),m_socket(NULL){
     bind(addr,port);
 }
 
@@ -82,6 +82,7 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
     TransmissionData data;
 
 	// 向 STUN 服务器发送这边的 IP 和端口，以供其判断是否存在NAT，也可用于之后将内网地址发给对等端以尝试内网直接相连
+    data.add(IDENTIFIER,m_identifier);
     data.add(LOCAL_IP,client->getAddr());
     data.add(LOCAL_PORT,client->getPort());
     proxy.write(data);

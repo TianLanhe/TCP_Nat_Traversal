@@ -12,6 +12,7 @@ LIB_BEGIN
 #define DEFAULT_LISTEN_NUM 10
 
 class ClientSocket;
+class DataBase;
 
 class NatCheckerServer : public Object
 {
@@ -22,6 +23,7 @@ public:
     NatCheckerServer(const std::string&, port_type, const std::string&, port_type);
     ~NatCheckerServer();
 
+    bool setDataBase(DataBase*);
     bool setListenNum(size_t);
 
     // this function will run forever, you should call this function in a new thread
@@ -41,6 +43,7 @@ private:
     port_type m_main_port;
     port_type m_another_port;
 
+    DataBase *m_database;
 };
 
 LIB_END

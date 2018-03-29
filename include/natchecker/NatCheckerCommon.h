@@ -21,6 +21,8 @@ namespace Lib{
 #define FILTER_TYPE "filter"
 #define MAP_TYPE "map"
 
+#define IDENTIFIER "identifier"
+
 }
 
 #endif // NAT_CHECKER_COMMON_H

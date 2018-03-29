@@ -49,8 +49,8 @@ public:
                                ( m_filter == ADDRESS_DEPENDENT || m_map == ADDRESS_AND_PORT_DEPENDENT ); }
 
 private:
-	bool m_isPredictable;
-	port_type m_port_delta;
+	bool m_isPredictable;			// Review: 目前设计为客户端不知道 NAT 是否可预测以及预测增量是多少，只有服务器端知道这两个信息
+	port_type m_port_delta;			// 客户端根据服务器的指令打洞或连接或监听，不需要知道 NAT 是否的这两个信息
 	
     bool m_haveNat;
     map_type m_map;

@@ -26,7 +26,7 @@ public:
 	
 	void setIdentifier(const std::string& identifier) { m_identifier = identifier; }
 	void setExtAddress(const Address& addr) { m_extAddr = addr; }
-	void setLovalAddress(const Address& addr) { m_localAddr = addr; }
+    void setLocalAddress(const Address& addr) { m_localAddr = addr; }
 	void setNatType(const nat_type& natType) { m_natType = natType; }
 	
 private:

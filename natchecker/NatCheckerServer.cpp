@@ -3,6 +3,7 @@
 #include "../include/socket/ReuseSocketFactory.h"
 #include "../include/transmission/TransmissionData.h"
 #include "../include/transmission/TransmissionProxy.h"
+#include "../include/database/DataBase.h"
 
 #include <thread>
 #include <iostream>
@@ -33,6 +34,16 @@ bool NatCheckerServer::setListenNum(size_t num){
     return !m_main_server->isListen() && m_main_server->listen(num);
 }
 
+bool NatCheckerServer::setDataBase(DataBase* database){
+    CHECK_PARAMETER_EXCEPTION(database);
+
+    if(m_database)
+        return false;
+
+    m_database = database;
+    return true;
+}
+
 void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* client){
     TransmissionProxy proxy(client);
     TransmissionData data = proxy.read();
@@ -43,7 +54,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
 	// 服务器检查它连接过来的外部地址，若不明确类型及规律，继续让 Client 连接新端口，直到 STUN 服务器探测出需要的了，就发送停止探测的信息
 	// 服务器可将整个过程获得到的信息存储起来以便其他用途
 	
-    if(!data.isMember(LOCAL_IP) || !data.isMember(LOCAL_PORT))
+    if(!data.isMember(LOCAL_IP) || !data.isMember(LOCAL_PORT) || !data.isMember(IDENTIFIER))
         return;
 
     string local_ip = data.getString(LOCAL_IP);
@@ -52,8 +63,17 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
     string ext_ip = client->getAddr();
     port_type ext_port = client->getPort();
 
-    // TODO
-    cout << "local_ip: " << local_ip << endl;
+    DataRecord record;
+    record.setIdentifier(data.getString(IDENTIFIER));
+
+    Address addr(local_ip,local_port);
+    record.setLocalAddress(addr);
+
+    addr.ip = ext_ip;
+    addr.port = ext_port;
+    record.setExtAddress(addr);
+
+    cout << "local_ip: " << local_ip << endl;   // TODO
     cout << "local_port: " << local_port << endl;
 
     cout << "ext_ip: " << ext_ip << endl;
@@ -74,6 +94,8 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
         data.clear();
         data.add(CONTINUE,false);
         proxy.write(data);
+
+        record.setNatType(nat_type(false));
     }
     else
     {   // 内外地址不同，存在 NAT，进行 NAT 的 Filter 类型检测 ： 先从 IP2:Port1 对客户端外网地址发起连接
@@ -171,8 +193,11 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
             
             delete c;
             c = NULL;
-            
-            // TODO 端口增量为0
+
+            // 端口增量为0
+            nat_type natType(true,ENDPOINT_INDEPENDENT,filterType);
+            natType.setPrediction();
+            record.setNatType(natType);
         }
         else	// 第2次的外网地址与第1次的不同，需要进一步判断是 Address Dependent 还是 Address And Port Dependent
         {
@@ -220,7 +245,10 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
                 delete c;
                 c = NULL;
                 
-                // TODO 端口增量为 ext_port2 - ext_port
+                // 端口增量为 ext_port2 - ext_port
+                nat_type natType(true,ADDRESS_DEPENDENT,filterType);
+                natType.setPrediction(true,ext_port2 - ext_port);
+                record.setNatType(natType);
             }
             else // 第3次与第2次的端口不同，表示时 Address And Port Dependent
             {
@@ -267,11 +295,13 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
                 delete c;
                 c = NULL;
 
-            	if( try_time == server->_getMaxTryTime() ){
-            		// TODO 端口随机变化
-            	}else{
-            		// TODO 设置增量为 delta_cur;
-            	}
+                nat_type natType(true,ADDRESS_DEPENDENT,filterType);
+                if( try_time == server->_getMaxTryTime() ){ // 端口随机变化
+                    natType.setPrediction(false);
+                }else{  // 设置增量为 delta_cur;
+                    natType.setPrediction(true,delta_cur);
+                }
+                record.setNatType(natType);
             }
         }
         delete s;
@@ -279,6 +309,10 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
     }
     delete client;
     client = NULL;
+
+    if(server->m_database->hasRecord(record.getIdentifier()))
+        server->m_database->removeRecord(record.getIdentifier());
+    CHECK_STATE_EXCEPTION(server->m_database->addRecord(record));
 }
 
 void NatCheckerServer::waitForClient(){

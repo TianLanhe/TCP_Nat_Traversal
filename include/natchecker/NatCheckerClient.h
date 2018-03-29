@@ -16,7 +16,7 @@ public:
     typedef typename ClientSocket::port_type port_type;
 
 public:
-    NatCheckerClient(const std::string&, port_type);
+    NatCheckerClient(const std::string&,const std::string&, port_type);
     ~NatCheckerClient();
 
     // Review: maybe should spilt into several operation
@@ -50,6 +50,8 @@ private:
     port_type m_ext_port;
 
     bool m_isConnected;
+
+    std::string m_identifier;
 };
 
 LIB_END
