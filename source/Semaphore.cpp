@@ -11,7 +11,7 @@ Semaphore::Semaphore(int val):m_semid(-1){
 
     if(m_semid != -1){
         semun arg;
-        arg.val = 0;
+        arg.val = val;
         semctl(m_semid,0,SETVAL,arg);
     }
 }

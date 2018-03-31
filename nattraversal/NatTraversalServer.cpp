@@ -5,7 +5,6 @@
 #include "../socket/DefaultClientSocket.h"
 #include "../socket/DefaultServerSocket.h"
 #include "../database/DefaultDataBase.h"
-#include "../include/SmartPointer.h"
 #include "NatTraversalCommon.h"
 
 #include <sys/types.h>
