@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <thread>
+#include <iostream>
 
 using namespace std;
 using namespace Lib;
@@ -42,7 +43,7 @@ vector<string> getLocalIps(){
     for(int i=0;i < num;++i,++ifr){
         struct sockaddr_in *sin = (struct sockaddr_in *)(&ifr->ifr_addr);
 
-        if(ioctl(s, SIOCGIFFLAGS, ifr) == -1);
+        if(ioctl(s, SIOCGIFFLAGS, ifr) == -1)
             return ret;
 
         if(((ifr->ifr_flags & IFF_LOOPBACK) == 0) && (ifr->ifr_flags & IFF_UP))
@@ -54,6 +55,12 @@ vector<string> getLocalIps(){
 
 bool NatTraversalServer::init(){
     vector<string> ips = getLocalIps();
+
+    cout << "ip in this host:";
+    for(vector<string>::size_type i=0;i<ips.size();++i)
+        cout << " \"" << ips[i] << '\"';
+    cout << endl;
+
     if(ips.size() < 2)
         return false;
 
@@ -118,6 +125,8 @@ void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
 
     if(!data.isMember(IDENTIFIER))
         return;
+
+    cout << "client login in : \"" << data[IDENTIFIER] << "\"" << endl;
 
     m_user_manager->addRecord(UserRecord(data.getString(IDENTIFIER),socket));
 }
@@ -256,7 +265,7 @@ void NatTraversalServer::waitForClient(){
             DefaultClientSocket *socket;
 
             vector<string> identifiers = m_user_manager->getMembers();
-            for(vector<string>::size_type i=0;i<identifiers.size();++i){
+            for(vector<string>::size_type i=0;i<identifiers.size() && ret != 0;++i){
                 socket = (*m_user_manager)[identifiers[i]].getClientSocket();
 
                 if(FD_ISSET(socket->_getfd(),&set)){

@@ -10,18 +10,18 @@ namespace Lib{
 class Subject
 {
 public:
-	virtual void addObserver(Observer* ob){
-		for(std::vector<Observer*>::iterator it = m_observers.begin();it != m_observers.end();++it){
-			if(*it == ob){
-				m_observers.erase(it);
-				break;
-			}
-		}
+    virtual void addObserver(Observer* ob){
+        m_observers.push_back(ob);
 	}
 	
 	virtual void removeObserver(Observer* ob)
 	{
-        m_observers.push_back(ob);
+        for(std::vector<Observer*>::iterator it = m_observers.begin();it != m_observers.end();++it){
+            if(*it == ob){
+                m_observers.erase(it);
+                break;
+            }
+        }
 	}
 	
 	virtual void notifyAll(void* msg)

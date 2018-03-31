@@ -89,9 +89,9 @@ template < typename T >
 bool DefaultDataBase<T>::addRecord(const T& record) {
     m_mutex.lock();
 
-    if(hasRecord(record.getIdentifier()))
+    if(m_map.find(record.getIdentifier()) != m_map.end())
     //	return false;
-        removeRecord(record.getIdentifier());
+        m_map.erase(record.getIdentifier());
 
     m_map.insert(std::pair<std::string,T>(record.getIdentifier(),record));
 
@@ -105,7 +105,7 @@ template < typename T >
 bool DefaultDataBase<T>::removeRecord(const std::string& identifier){
     m_mutex.lock();
 
-    if(!hasRecord(identifier))
+    if(m_map.find(identifier) == m_map.end())
         return false;
 
     m_map.erase(identifier);

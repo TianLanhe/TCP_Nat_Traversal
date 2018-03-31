@@ -39,7 +39,7 @@ bool NatTraversalClient::hasEnrolled(){
 bool NatTraversalClient::isReadyToAccept(){
     bool ret;
     m_mutex.lock();
-    ret = ready;
+    ret = m_isReady;
     m_mutex.unlock();
     return ret;
 }
