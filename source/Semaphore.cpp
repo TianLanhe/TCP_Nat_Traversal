@@ -6,12 +6,12 @@
 
 using namespace Lib;
 
-Semaphore::Semaphore(int val = 0):m_semid(-1){
+Semaphore::Semaphore(int val):m_semid(-1){
     m_semid = semget(IPC_PRIVATE,1,IPC_CREAT|0660);
 
     if(m_semid != -1){
         semun arg;
-        arg.val = 0;
+        arg.val = val;
         semctl(m_semid,0,SETVAL,arg);
     }
 }
