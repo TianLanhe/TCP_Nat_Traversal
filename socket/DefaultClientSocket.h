@@ -38,6 +38,9 @@ public:
 	virtual port_type getPeerPort() const;
 	virtual std::string getPeerAddr() const;
 
+public:
+    int _getfd(){ return m_socket._socket(); }		// 提供给 NatTraversalClient 的特殊函数
+
 protected:
 
     size_t _getMaxTryTime() const { return 10; }

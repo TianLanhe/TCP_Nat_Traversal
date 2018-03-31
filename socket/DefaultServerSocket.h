@@ -32,6 +32,9 @@ public:
 	virtual port_type getPort() const { return m_socket._port(); }
 	virtual std::string getAddr() const { return m_socket._addr(); }
 
+public:
+    int _getfd(){ return m_socket._socket(); }		// 提供给 NatTraversalServer 的特殊函数
+
 protected:
 	DefaultSocket m_socket;
 

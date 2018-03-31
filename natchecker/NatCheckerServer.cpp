@@ -34,7 +34,7 @@ bool NatCheckerServer::setListenNum(size_t num){
     return !m_main_server->isListen() && m_main_server->listen(num);
 }
 
-bool NatCheckerServer::setDataBase(DataBase* database){
+bool NatCheckerServer::setDataBase(DataBase<DataRecord>* database){
     CHECK_PARAMETER_EXCEPTION(database);
 
     if(m_database)
@@ -310,8 +310,6 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
     delete client;
     client = NULL;
 
-    if(server->m_database->hasRecord(record.getIdentifier()))
-        server->m_database->removeRecord(record.getIdentifier());
     CHECK_STATE_EXCEPTION(server->m_database->addRecord(record));
 }
 

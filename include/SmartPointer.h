@@ -8,13 +8,13 @@ namespace Lib {
 	template<typename T>
 	class SmartPointer {
 	public:
-		explicit SmartPointer(T* p = nullptr) { _attach(p); }
+        explicit SmartPointer(T* p = NULL) { _attach(p); }
 		SmartPointer(const SmartPointer<T>& sp);
 
 		~SmartPointer() { _release(); }
 
 		void swap(SmartPointer<T>& sp);
-		void reset(T* p = nullptr);
+        void reset(T* p = NULL);
 
 		T* get() const { return m_pointer; }
 		size_t use_count() const { return m_counter ? *m_counter : 0; }
@@ -23,7 +23,7 @@ namespace Lib {
 		T* operator->() const { return get(); }
 		T& operator*() const { return *get(); }
 		bool unique() const { return use_count() == 1; }
-		explicit operator bool() const { return get() != nullptr; }
+        explicit operator bool() const { return get() != NULL; }
 
 
 	private:
@@ -38,11 +38,11 @@ namespace Lib {
 	void SmartPointer<T>::_attach(T *p) {
 		if (p) {
 			m_counter = new size_t(1);
-			if (m_counter == nullptr)
+            if (m_counter == NULL)
 				THROW_EXCEPTION(NoMemoryException, "no memory to create reference counter.");
 		}
 		else {
-			m_counter = nullptr;
+            m_counter = NULL;
 		}
 		m_pointer = p;
 	}
@@ -55,8 +55,8 @@ namespace Lib {
 				delete m_pointer;
 				delete m_counter;
 			}
-			m_pointer = nullptr;
-			m_counter = nullptr;
+            m_pointer = NULL;
+            m_counter = NULL;
 		}
 	}
 
@@ -82,7 +82,7 @@ namespace Lib {
 	}
 
 	template<typename T>
-	void SmartPointer<T>::reset(T* p = nullptr) {
+    void SmartPointer<T>::reset(T* p) {
 		_release();
 		_attach(p);
 	}

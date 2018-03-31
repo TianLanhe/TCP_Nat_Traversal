@@ -9,9 +9,37 @@
 
 LIB_BEGIN
 
-#define DEFAULT_LISTEN_NUM 10
+struct Address{
+    Address():port(0){ }
+    Address(const Object::ip_type& ip, Object::port_type port):ip(ip),port(port){ }
+
+    Object::ip_type ip;
+    Object::port_type port;
+};
+
+class DataRecord : public Object
+{
+public:
+    std::string getIdentifier() const { return m_identifier; }
+    Address getExtAddress() const { return m_extAddr; }
+    Address getLocalAddress() const { return m_localAddr; }
+    nat_type getNatType() const { return m_natType; }
+
+    void setIdentifier(const std::string& identifier) { m_identifier = identifier; }
+    void setExtAddress(const Address& addr) { m_extAddr = addr; }
+    void setLocalAddress(const Address& addr) { m_localAddr = addr; }
+    void setNatType(const nat_type& natType) { m_natType = natType; }
+
+private:
+    std::string m_identifier;
+    Address m_extAddr;
+    Address m_localAddr;
+    nat_type m_natType;
+};
 
 class ClientSocket;
+
+template < typename T >
 class DataBase;
 
 class NatCheckerServer : public Object
@@ -23,7 +51,7 @@ public:
     NatCheckerServer(const std::string&, port_type, const std::string&, port_type);
     ~NatCheckerServer();
 
-    bool setDataBase(DataBase*);
+    bool setDataBase(DataBase<DataRecord>*);
     bool setListenNum(size_t);
 
     // this function will run forever, you should call this function in a new thread
@@ -43,7 +71,7 @@ private:
     port_type m_main_port;
     port_type m_another_port;
 
-    DataBase *m_database;
+    DataBase<DataRecord> *m_database;
 };
 
 LIB_END

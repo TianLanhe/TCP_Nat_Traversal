@@ -30,6 +30,8 @@ LIB_BEGIN
 	if(!(cond))							\
 		THROW_EXCEPTION(InvalidOperationException,"Operation Is Invalid")
 
+#define DEFAULT_LISTEN_NUM 10
+
 class Object {
 public:
 	typedef unsigned short port_type;
