@@ -45,10 +45,13 @@ bool NatTraversalClient::isReadyToAccept(){
     return ret;
 }
 
-void NatTraversalClient::setReadySafely(bool ready){
+bool NatTraversalClient::_setReadySafely(bool ready){
+    bool ret;
     m_mutex.lock();
+    ret = m_isReady;
     m_isReady = ready;
     m_mutex.unlock();
+    return ret;
 }
 
 bool NatTraversalClient::setReadyToAccept(bool ready){
@@ -64,7 +67,7 @@ bool NatTraversalClient::setReadyToAccept(bool ready){
     if(!proxy.write(data))
         return false;
 
-    setReadySafely(ready);
+    _setReadySafely(ready);
 
     return true;
 }
@@ -91,7 +94,7 @@ ClientSocket* NatTraversalClient::connectToPeerHost(const std::string& identifie
     m_isConnecting = true;
     m_mtx.unlock();
 
-    _setReadySafely(false);
+    bool isReady = _setReadySafely(false);
 
     TransmissionProxy proxy(m_socket);
     TransmissionData data;
@@ -128,13 +131,19 @@ ClientSocket* NatTraversalClient::connectToPeerHost(const std::string& identifie
     //ret = OperationFactory::GetInstance()->StartOperation(data.getString(COMMAND),data);
 
 r:
-    unique_lock<mutex> lck(m_mutex);
-    m_isReady = true;
-    m_conVar.notify_one();
+    {
+        unique_lock<mutex> lck(m_mutex);
+        if(isReady){
+            m_isReady = true;
+            m_conVar.notify_one();
+        }
+    }
 
-    unique_lock<mutex> ulck(m_mtx);
-    m_isConnecting = false;
-    m_conVar.notify_one();
+    {
+        unique_lock<mutex> ulck(m_mtx);
+        m_isConnecting = false;
+        m_cnv.notify_one();
+    }
 
     return ret;
 }
@@ -143,13 +152,13 @@ ClientSocket* NatTraversalClient::waitForPeerHost(){
     CHECK_OPERATION_EXCEPTION(hasEnrolled());
 
     {
-        unique_lock lck(m_mtx);
+        unique_lock<mutex> lck(m_mtx);
         while(m_isConnecting)
             m_cnv.wait(lck);
-    }
 
-    if(!isReadyToAccept() && !setReadyToAccept())
-        return NULL;
+        if(!setReadyToAccept())
+            return NULL;
+    }
 
     DefaultClientSocket *defaultClientSocket = dynamic_cast<DefaultClientSocket*>(m_socket);
     if(defaultClientSocket == NULL)

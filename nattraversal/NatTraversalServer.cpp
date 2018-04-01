@@ -125,7 +125,7 @@ void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
     if(!data.isMember(IDENTIFIER))
         return;
 
-    cout << "client login in : \"" << data[IDENTIFIER] << "\"" << endl;
+    cout << "Client \"" << data[IDENTIFIER] << "\" login out" << endl;
 
     m_user_manager->addRecord(UserRecord(data.getString(IDENTIFIER),socket));
 }
@@ -152,6 +152,8 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
     if(data.empty()){	// 读取到的内容是空的，表示连接已关闭
         delete socket;
         userManager->removeRecord(identifier);
+
+        cout << "Client \"" << identifier << "\" login out" << endl;
     }else{
         string peer_identifier;
 
@@ -193,7 +195,7 @@ r:
             proxy.write(data);
 
             if(isReady)
-                (*userManager)[identifier].setReady(false);
+                (*userManager)[identifier].setReady(true);
         }
         else
         {

@@ -32,7 +32,7 @@ public:
     ClientSocket* waitForPeerHost();
 
 private:
-    void _setReadySafely(bool);
+    bool _setReadySafely(bool);
 
 private:
     ClientSocket *m_socket;		// 这条用于与服务器保持持久连接，传输信令的 TCP 连接，不具有 Reuse 属性
