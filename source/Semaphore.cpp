@@ -4,6 +4,10 @@
 #include <sys/sem.h>
 #include <sys/ipc.h>
 
+#include <errno.h>
+
+extern int errno;
+
 using namespace Lib;
 
 Semaphore::Semaphore(int val):m_semid(-1){
@@ -29,7 +33,10 @@ void Semaphore::request(){
     sem_b.sem_op = -1;  // P()
     sem_b.sem_flg = SEM_UNDO;
 
-    semop(m_semid, &sem_b, 1);
+    int ret;
+    do{
+        ret = semop(m_semid, &sem_b, 1);
+    }while(ret == -1 && errno == EINTR);
 }
 
 void Semaphore::release(){
