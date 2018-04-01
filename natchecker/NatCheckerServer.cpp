@@ -44,7 +44,7 @@ bool NatCheckerServer::setDataBase(DataBase<DataRecord>* database){
     return true;
 }
 
-void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* client){
+void NatCheckerServer::handle_request(ClientSocket* client){
     TransmissionProxy proxy(client);
     TransmissionData data = proxy.read();
 
@@ -104,12 +104,12 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
 		// 因此 NAT 属于 Address Dependent 的 Filter 规则；若连接失败，表示相同 IP 不同 Port 的不能通过，
 		// 因此 NAT 属于 Address And Port Denpendent 的Filter规则
         ClientSocket *c = ReuseSocketFactory::GetInstance()->GetClientSocket();
-        if(!c->bind(server->m_another_addr,server->m_main_port)){
+        if(!c->bind(m_another_addr,m_main_port)){
             delete c;
             return;
         }
 
-        bool canConnect = c->connect(ext_ip,ext_port,server->_getConnectRetryTime());
+        bool canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
         filter_type filterType;
         if(canConnect)
         {
@@ -119,12 +119,12 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
         {
         	// 若无法连接上，则关闭原来的 Client Socket，重新打开一个，绑定地址为 IP1:Port2，并尝试连接
             if(!(c->close() && c->open() &&
-                 c->bind(server->m_main_addr,server->m_another_port))){
+                 c->bind(m_main_addr,m_another_port))){
                 delete c;
                 return;
             }
 
-            canConnect = c->connect(ext_ip,ext_port,server->_getConnectRetryTime());
+            canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
 
             if(canConnect)
                 filterType = ADDRESS_DEPENDENT;
@@ -147,7 +147,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
 		// 若两次差值不同，则继续循环，让 Client 继续连接，直至这边观察到连续两次差值相同或循环次数已经达到阈值为止
 		
         ServerSocket *s = ReuseSocketFactory::GetInstance()->GetServerSocket();
-        if(!(s->bind(server->m_another_addr,server->m_main_port) &&
+        if(!(s->bind(m_another_addr,m_main_port) &&
              s->listen(DEFAULT_LISTEN_NUM))){
             delete s;
             return;
@@ -158,8 +158,8 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
 		data.add(FILTER_TYPE,filterType);
         data.add(EXTERN_IP,ext_ip);
         data.add(EXTERN_PORT,ext_port);
-        data.add(CHANGE_IP,server->m_another_addr);
-        data.add(CHANGE_PORT,server->m_main_port);
+        data.add(CHANGE_IP,m_another_addr);
+        data.add(CHANGE_PORT,m_main_port);
         
         proxy.write(data);		// STUN 服务器将信息发送给 Client，并等待 Client 连接
 
@@ -203,11 +203,11 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
         {
             data.clear();
             data.add(CONTINUE,true);
-            data.add(CHANGE_IP,server->m_another_addr);
-            data.add(CHANGE_PORT,server->m_another_port);
+            data.add(CHANGE_IP,m_another_addr);
+            data.add(CHANGE_PORT,m_another_port);
 
             if(!(s->close() && s->open() &&
-                 s->bind(server->m_another_addr,server->m_another_port) &&
+                 s->bind(m_another_addr,m_another_port) &&
                  s->listen(DEFAULT_LISTEN_NUM)))
                 return;
 
@@ -257,14 +257,14 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
                 size_t try_time = 0;
                 port_type ext_port_pre = ext_port3;
             	
-            	while( (delta_pre != delta_cur || delta_cur + ext_port_pre >= 65535) && try_time++ < server->_getMaxTryTime()){
+                while( (delta_pre != delta_cur || delta_cur + ext_port_pre >= 65535) && try_time++ < _getMaxTryTime()){
                     data.clear();
                     data.add(CONTINUE,true);
-                    data.add(CHANGE_IP,server->m_another_addr);
-                    data.add(CHANGE_PORT,server->m_another_port + (port_type)(try_time));
+                    data.add(CHANGE_IP,m_another_addr);
+                    data.add(CHANGE_PORT,m_another_port + (port_type)(try_time));
 
                     if(!(s->close() && s->open() &&
-                            s->bind(server->m_another_addr,server->m_another_port + try_time) &&
+                            s->bind(m_another_addr,m_another_port + try_time) &&
                             s->listen(DEFAULT_LISTEN_NUM)))
                         return;
 
@@ -296,7 +296,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
                 c = NULL;
 
                 nat_type natType(true,ADDRESS_DEPENDENT,filterType);
-                if( try_time == server->_getMaxTryTime() ){ // 端口随机变化
+                if( try_time == _getMaxTryTime() ){ // 端口随机变化
                     natType.setPrediction(false);
                 }else{  // 设置增量为 delta_cur;
                     natType.setPrediction(true,delta_cur);
@@ -310,7 +310,7 @@ void NatCheckerServer::handle_request(NatCheckerServer *server,ClientSocket* cli
     delete client;
     client = NULL;
 
-    CHECK_STATE_EXCEPTION(server->m_database->addRecord(record));
+    CHECK_STATE_EXCEPTION(m_database->addRecord(record));
 }
 
 void NatCheckerServer::waitForClient(){
@@ -319,6 +319,6 @@ void NatCheckerServer::waitForClient(){
 
     ClientSocket *client;
     while(client = m_main_server->accept()){
-        thread(handle_request,this,client).detach();
+        handle_request(client);			// 目前的处理是不要并发执行，来一个处理一个，因为检测 NAT 类型的过程中会等待对方发起连接，如果并发会混，也许这个线程接受到的 socket 连接是另一个线程需要的
     }
 }

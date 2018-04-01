@@ -58,7 +58,7 @@ public:
     void waitForClient();
 
 protected:
-    static void handle_request(NatCheckerServer*,ClientSocket*);
+    void handle_request(ClientSocket*);
 
     size_t _getMaxTryTime(){ return 3; }
     size_t _getConnectRetryTime(){ return 1; }
