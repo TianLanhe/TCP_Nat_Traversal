@@ -11,7 +11,8 @@
 using namespace std;
 using namespace Lib;
 
-NatTraversalClient::NatTraversalClient(const std::string& identifier):m_identifier(identifier),m_isReady(false){
+NatTraversalClient::NatTraversalClient(const std::string& identifier):m_identifier(identifier),
+    m_isReady(false),m_isConnecting(false){
     m_socket = new DefaultClientSocket();
 }
 
@@ -86,7 +87,11 @@ ClientSocket* NatTraversalClient::connectToPeerHost(const std::string& identifie
 
     NatCheckerClient client(m_identifier,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
     
-    setReadySafely(false);
+    m_mtx.lock();
+    m_isConnecting = true;
+    m_mtx.unlock();
+
+    _setReadySafely(false);
 
     TransmissionProxy proxy(m_socket);
     TransmissionData data;
@@ -126,11 +131,22 @@ r:
     unique_lock<mutex> lck(m_mutex);
     m_isReady = true;
     m_conVar.notify_one();
+
+    unique_lock<mutex> ulck(m_mtx);
+    m_isConnecting = false;
+    m_conVar.notify_one();
+
     return ret;
 }
 
 ClientSocket* NatTraversalClient::waitForPeerHost(){
     CHECK_OPERATION_EXCEPTION(hasEnrolled());
+
+    {
+        unique_lock lck(m_mtx);
+        while(m_isConnecting)
+            m_cnv.wait(lck);
+    }
 
     if(!isReadyToAccept() && !setReadyToAccept())
         return NULL;
@@ -183,7 +199,8 @@ ClientSocket* NatTraversalClient::waitForPeerHost(){
                 return ret;
             }else{
                 unique_lock<mutex> lck(m_mutex);
-                m_conVar.wait(lck);
+                while(!m_isReady)
+                    m_conVar.wait(lck);
             }
         }
     }

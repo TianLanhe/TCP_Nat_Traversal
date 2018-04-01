@@ -32,7 +32,7 @@ public:
     ClientSocket* waitForPeerHost();
 
 private:
-    void setReadySafely(bool);
+    void _setReadySafely(bool);
 
 private:
     ClientSocket *m_socket;		// 这条用于与服务器保持持久连接，传输信令的 TCP 连接，不具有 Reuse 属性
@@ -42,6 +42,10 @@ private:
     bool m_isReady;
     std::mutex m_mutex;
     std::condition_variable m_conVar;
+
+    bool m_isConnecting;
+    std::mutex m_mtx;
+    std::condition_variable m_cnv;
 };
 
 LIB_END
