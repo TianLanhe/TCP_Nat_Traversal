@@ -201,9 +201,9 @@ TransmissionData Lib::GetTraversalData(const TraversalCommand::TraversalType& ty
         break;
     case CONNECT_RANDOMLY:
         ret.add(DESTINY_IP,ip);
-        ret.add(DESTINY_PORT,port);
+        //ret.add(DESTINY_PORT,port);
         ret.add(TRY_TIME,TRY_TIME_CONSTANT);
-        ret.add(INCREMENT,0);
+        //ret.add(INCREMENT,0);
         break;
     case LISTEN_DIRECTLY:
         break;

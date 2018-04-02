@@ -22,7 +22,7 @@ ClientSocket* ConnectDirectlyCommand::traverse(const TransmissionData& data, con
 
     usleep(500000);
 
-    if(!ret->connect(data.getString(DESTINY_IP),data.getInt(DESTINY_PORT))){
+    if(!ret->connect(data.getString(DESTINY_IP),data.getInt(DESTINY_PORT),1)){
         delete ret;
         return NULL;
     }

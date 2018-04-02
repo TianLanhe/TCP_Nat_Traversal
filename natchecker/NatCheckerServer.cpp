@@ -298,7 +298,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 delete c;
                 c = NULL;
 
-                nat_type natType(true,nat_type::ADDRESS_DEPENDENT,filterType);
+                nat_type natType(true,nat_type::ADDRESS_AND_PORT_DEPENDENT,filterType);
                 if( try_time == _getMaxTryTime() ){ // 端口随机变化
                     natType.setPrediction(false);
                 }else{  // 设置增量为 delta_cur;

@@ -8,9 +8,14 @@ LIB_BEGIN
 class ListenAndPunchCommand : public TraversalCommand
 {
 public:
-    ListenAndPunchCommand(){ }
+    ListenAndPunchCommand():shouldPunch(true){ }
 
-    virtual ClientSocket* traverse(const TransmissionData &, const ip_type &, port_type){ }
+    virtual ClientSocket* traverse(const TransmissionData &, const ip_type &, port_type);
+
+private:
+    static void punching(ListenAndPunchCommand*,ClientSocket*,const ip_type&,port_type);
+
+    bool shouldPunch;
 };
 
 LIB_END

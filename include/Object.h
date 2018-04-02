@@ -31,6 +31,7 @@ LIB_BEGIN
 		THROW_EXCEPTION(InvalidOperationException,"Operation Is Invalid")
 
 #define DEFAULT_LISTEN_NUM 10
+#define MAX_PORT ((unsigned short)(-1))
 
 class Object {
 public:

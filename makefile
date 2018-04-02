@@ -21,6 +21,14 @@ server_obj = NatTraversalServer.o \
 
 client_obj = NatTraversalClient.o \
 			NatCheckerClient.o
+			
+traversal_command_obj = TraversalCommand.o \
+						ConnectDirectlyCommand.o \
+						ConnectRandomlyCommand.o \
+						ConnectAroundCommand.o \
+						ListenDirectlyCommand.o \
+						ListenAndPunchCommand.o \
+						ListenAndPunchRandomlyCommand.o
 	
 ########################################## directory
 	 
@@ -127,35 +135,30 @@ icf_nat_traversal_common =
 
 ########################################### target 
 
-#all: client server
+all: client server
 
 test: mytest.o $(trans_obj) $(reuse_sock_obj) $(client_obj) Exception.o
 	g++ -o mytest mytest.o $(trans_obj) $(reuse_sock_obj) $(client_obj) Exception.o -lpthread
 
-#client: client.o $(trans_obj) $(reuse_sock_obj) Exception.o
-#	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) Exception.o
+client: client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o
+	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o -lpthread
 	
-#server: server.o $(trans_obj) $(reuse_sock_obj) Exception.o
-#	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) Exception.o
+server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o
+	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o -lpthread
 	
 mytest.o: mytest.cpp \
 	$(nat_traversal_inc_dir)/NatTraversalClient.h $(icf_nat_checker_client) \
 	$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
 	g++ -c mytest.cpp -std=c++11
 
-#client.o: main/client.cpp \
-#	$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
-#	$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
-#	$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
-#	$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
-#	g++ -c main/client.cpp
+client.o: main/client.cpp \
+	$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+	$(nat_traversal_inc_dir)/NatTraversalClient.h $(icf_nat_traversal_client)
+	g++ -c main/client.cpp -std=c++11
 	
-#server.o: main/server.cpp \
-#	$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
-#	$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
-#	$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
-#	$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
-#	g++ -c main/server.cpp
+server.o: main/server.cpp \
+	$(nat_traversal_inc_dir)/NatTraversalServer.h $(icf_nat_traversal_server)
+	g++ -c main/server.cpp
 
 ########################################### object
 
@@ -207,7 +210,7 @@ DefaultServerSocket.o: socket/DefaultServerSocket.h $(icf_default_server_socket)
 Exception.o: include/Exception.h source/Exception.cpp
 	g++ -c source/Exception.cpp
 	
-Semaphore.o: source/Semaphore.cpp include/Semaphre.h
+Semaphore.o: source/Semaphore.cpp include/Semaphore.h
 	g++ -c source/Semaphore.cpp
 	
 DefaultSocket.o: socket/DefaultSocket.h socket/DefaultSocket.cpp $(icf_default_socket)
@@ -270,11 +273,15 @@ ConnectDirectlyCommand.o: traversalcommand/ConnectDirectlyCommand.cpp \
 	g++ -c traversalcommand/ConnectDirectlyCommand.cpp
 
 ConnectAroundCommand.o: traversalcommand/ConnectAroundCommand.cpp \
-					traversalcommand/ConnectAroundCommand.h $(icf_connect_around)
+					traversalcommand/ConnectAroundCommand.h $(icf_connect_around) \
+					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
 	g++ -c traversalcommand/ConnectAroundCommand.cpp
 	
 ConnectRandomlyCommand.o: traversalcommand/ConnectRandomlyCommand.cpp \
-					traversalcommand/ConnectRandomlyCommand.h $(icf_connect_randomly)
+					traversalcommand/ConnectRandomlyCommand.h $(icf_connect_randomly) \
+					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
 	g++ -c traversalcommand/ConnectRandomlyCommand.cpp
 	
 ListenDirectlyCommand.o: traversalcommand/ListenDirectlyCommand.cpp \
@@ -282,17 +289,27 @@ ListenDirectlyCommand.o: traversalcommand/ListenDirectlyCommand.cpp \
 					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
 					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
 					$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
-					socket/ReuseServerSocket $(icf_reuse_server_socket) \
+					socket/ReuseServerSocket.h $(icf_reuse_server_socket) \
 					include/SmartPointer.h $(icf_smart_pointer)
-	g++ -c traversalcommand/ListenDirectlyCommand.cpp
+	g++ -c traversalcommand/ListenDirectlyCommand.cpp -std=c++11
 	
 ListenAndPunchCommand.o: traversalcommand/ListenAndPunchCommand.cpp \
-					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch)
-	g++ -c traversalcommand/ListenAndPunchCommand.cpp
+					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch) \
+					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+					$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
+					socket/ReuseServerSocket.h $(icf_reuse_server_socket) \
+					include/SmartPointer.h $(icf_smart_pointer)
+	g++ -c traversalcommand/ListenAndPunchCommand.cpp -std=c++11
 	
 ListenAndPunchRandomlyCommand.o: traversalcommand/ListenAndPunchCommand.cpp \
-					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch_some)
-	g++ -c traversalcommand/ListenAndPunchCommand.cpp
+					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch_some) \
+					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+					$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
+					socket/ReuseServerSocket.h $(icf_reuse_server_socket) \
+					include/SmartPointer.h $(icf_smart_pointer)
+	g++ -c traversalcommand/ListenAndPunchRandomlyCommand.cpp -std=c++11
 
 ###########################################
 

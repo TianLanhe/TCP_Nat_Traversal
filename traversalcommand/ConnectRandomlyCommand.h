@@ -10,7 +10,11 @@ class ConnectRandomlyCommand : public TraversalCommand
 public:
     ConnectRandomlyCommand(){ }
 
-    virtual ClientSocket* traverse(const TransmissionData &, const ip_type &, port_type){ }
+    virtual ClientSocket* traverse(const TransmissionData &, const ip_type &, port_type);
+
+private:
+    int _nrand(int n);
+    int _getRandomNum(int start,int length);
 };
 
 LIB_END

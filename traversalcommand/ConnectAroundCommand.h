@@ -8,9 +8,9 @@ LIB_BEGIN
 class ConnectAroundCommand : public TraversalCommand
 {
 public:
-    ConnectAroundCommand(){}
+    ConnectAroundCommand(){ }
 
-    virtual ClientSocket* traverse(const TransmissionData &, const ip_type &, port_type){}
+    virtual ClientSocket* traverse(const TransmissionData &, const ip_type &, port_type);
 };
 
 LIB_END

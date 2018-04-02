@@ -19,6 +19,9 @@ ClientSocket* ListenDirectlyCommand::traverse(const TransmissionData &data, cons
     if(!server->bind(ip,port))
         return NULL;
 
+    if(!server->listen(1))
+        return NULL;
+
     ReuseServerSocket *reuseSocket = dynamic_cast<ReuseServerSocket*>(server.get());
     if(reuseSocket == NULL)
         return NULL;
@@ -26,7 +29,8 @@ ClientSocket* ListenDirectlyCommand::traverse(const TransmissionData &data, cons
     struct timeval t = {5,0};
     fd_set set;
     FD_ZERO(&set);
-    int ret = select(reuseSocket->_getfd()+1,NULL,&set,NULL,&t);
+    FD_SET(reuseSocket->_getfd(),&set);
+    int ret = select(reuseSocket->_getfd()+1,&set,NULL,NULL,&t);
 
     if(ret == -1){
         THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");

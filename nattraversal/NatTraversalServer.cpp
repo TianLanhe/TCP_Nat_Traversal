@@ -158,14 +158,12 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
     }else{
         string peer_identifier;
 
-        vector<string> members = data.getMembers();
-        for(vector<string>::size_type i=0;i<members.size();++i)
-            cout << members[i] << endl;
-
         if(data.isMember(READY_TO_CONNECT))	// 内容包括 READY_TO_CONNECT ，设置用户的能否来连接字段
         {
             bool isReady = data.getBool(READY_TO_CONNECT);
             userManager->getRecord(identifier).setReady(isReady);
+
+            cout << "Client \"" << identifier << "\" set ready to accept connecting" << endl;
         }
         else if(data.isMember(PEER_HOST))	// 内容包括 PEER_HOST ，进行穿透操作
         {
@@ -177,12 +175,18 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             nat_type natType_b;
 
             bool isReady = (*userManager)[identifier].isReady();	// 先设置请求连接方为不允许建立连接，暂时屏蔽其他客户端对该客户端的连接请求
-            if(isReady)											// P2P 连接建立成功后再恢复
+            if(isReady){											// P2P 连接建立成功后再恢复
                 (*userManager)[identifier].setReady(false);
+                cout << "set Client \"" << identifier << "\" not ready" << endl;
+            }
+
+            cout << "Client \"" << identifier << "\" want to connect with Client \"" << data.getString(PEER_HOST) << "\"" << endl;
 
             peer_identifier = data.getString(PEER_HOST);
-            if(!userManager->hasRecord(peer_identifier) || !(*userManager)[peer_identifier].isReady())
+            if(!userManager->hasRecord(peer_identifier) || !(*userManager)[peer_identifier].isReady()){
+                cout << "Client \"" << peer_identifier << "\" has logined out" << endl;
                 goto r;
+            }
 
             data.clear();
             data.add(CAN_CONNECT,true);
@@ -192,12 +196,19 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             if(!proxy.write(data))
                 goto r;
 
+            cout << "Client \"" << identifier << "\" start to checker NAT type" << endl;
+
             data.remove(CAN_CONNECT);
             proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
             proxy.write(data);
 
+            cout << "Client \"" << peer_identifier << "\" start to checker NAT type" << endl;
+
             m_traversal_server->waitForDataBaseUpdate(identifier);
+            cout << "Client \"" << identifier << "\" finish to checker NAT type" << endl;
+
             m_traversal_server->waitForDataBaseUpdate(peer_identifier);
+            cout << "Client \"" << peer_identifier << "\" finish to checker NAT type" << endl;
 
             record_a = m_traversal_server->m_database->getRecord(identifier);
             record_b = m_traversal_server->m_database->getRecord(peer_identifier);
@@ -209,12 +220,17 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
 
             data = GetTraversalData(types[0],natType_b,record_b.getExtAddress().ip,record_b.getExtAddress().port);
             data.add(CAN_CONNECT,true);
+            proxy.setSocket(socket);
             if(!proxy.write(data))
                 goto r;
+
+            cout << "send traversal command to Client \"" << identifier << "\"" << endl;
 
             data = GetTraversalData(types[1],natType_a,record_a.getExtAddress().ip,record_a.getExtAddress().port);
             proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
             proxy.write(data);
+
+            cout << "send traversal command to Client \"" << peer_identifier << "\"" << endl;
 
             return;
 r:
