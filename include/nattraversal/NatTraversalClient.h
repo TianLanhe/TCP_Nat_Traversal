@@ -34,6 +34,8 @@ public:
 private:
     bool _setReadySafely(bool);
 
+    ClientSocket* _checkNatTypeAndConnect(const ip_type&,port_type);
+
 private:
     ClientSocket *m_socket;		// 这条用于与服务器保持持久连接，传输信令的 TCP 连接，不具有 Reuse 属性
 

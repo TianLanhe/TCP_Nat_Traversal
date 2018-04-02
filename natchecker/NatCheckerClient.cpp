@@ -116,8 +116,8 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
         return false;
 
 	// 处理返回信息中的 Filter 类型、外网地址
-    filter_type filterType = (filter_type)(data.getInt(FILTER_TYPE));
-    map_type mapType;
+    nat_type::filter_type filterType = (nat_type::filter_type)(data.getInt(FILTER_TYPE));
+    nat_type::map_type mapType;
 
     m_ext_addr = data.getString(EXTERN_IP);
     m_ext_port = data.getInt(EXTERN_PORT);
@@ -157,7 +157,7 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
     if(!data.isMember(MAP_TYPE))
         return false;
 
-    mapType = (map_type)(data.getInt(MAP_TYPE));
+    mapType = (nat_type::map_type)(data.getInt(MAP_TYPE));
 
     m_natType.setNatType(true,mapType,filterType);
     m_isConnected = true;

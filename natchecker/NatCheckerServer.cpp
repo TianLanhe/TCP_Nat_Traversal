@@ -12,6 +12,9 @@
 using namespace std;
 using namespace Lib;
 
+typedef nat_type::filter_type filter_type;
+typedef nat_type::map_type map_type;
+
 NatCheckerServer::NatCheckerServer(const string& main_addr, port_type main_port, const string& another_addr, port_type another_port)
     :m_main_addr(main_addr),m_main_port(main_port),
       m_another_addr(another_addr),m_another_port(another_port){
@@ -113,7 +116,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
         filter_type filterType;
         if(canConnect)
         {
-            filterType = ENDPOINT_INDEPENDENT;
+            filterType = nat_type::ENDPOINT_INDEPENDENT;
         }
         else
         {
@@ -127,9 +130,9 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
 
             if(canConnect)
-                filterType = ADDRESS_DEPENDENT;
+                filterType = nat_type::ADDRESS_DEPENDENT;
             else
-                filterType = ADDRESS_AND_PORT_DEPENDENT;
+                filterType = nat_type::ADDRESS_AND_PORT_DEPENDENT;
         }
 
         delete c;
@@ -185,7 +188,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
         if(ext_ip2 == ext_ip && ext_port2 == ext_port) // 第2次的外网地址与第1次的相同
         {
             data.clear();
-            data.add(MAP_TYPE,ENDPOINT_INDEPENDENT);
+            data.add(MAP_TYPE,nat_type::ENDPOINT_INDEPENDENT);
             data.add(CONTINUE,false);
 
             proxy.setSocket(c);
@@ -195,7 +198,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             c = NULL;
 
             // 端口增量为0
-            nat_type natType(true,ENDPOINT_INDEPENDENT,filterType);
+            nat_type natType(true,nat_type::ENDPOINT_INDEPENDENT,filterType);
             natType.setPrediction();
             record.setNatType(natType);
         }
@@ -236,7 +239,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             if(ext_ip3 == ext_ip2 && ext_port3 == ext_port2) // 第3次的外网地址与第2次的相同
             {
                 data.clear();
-                data.add(MAP_TYPE,ADDRESS_DEPENDENT);
+                data.add(MAP_TYPE,nat_type::ADDRESS_DEPENDENT);
                 data.add(CONTINUE,false);
 
                 proxy.setSocket(c);
@@ -246,7 +249,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 c = NULL;
                 
                 // 端口增量为 ext_port2 - ext_port
-                nat_type natType(true,ADDRESS_DEPENDENT,filterType);
+                nat_type natType(true,nat_type::ADDRESS_DEPENDENT,filterType);
                 natType.setPrediction(true,ext_port2 - ext_port);
                 record.setNatType(natType);
             }
@@ -286,7 +289,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 }
             	
                 data.clear();
-                data.add(MAP_TYPE,ADDRESS_AND_PORT_DEPENDENT);
+                data.add(MAP_TYPE,nat_type::ADDRESS_AND_PORT_DEPENDENT);
                 data.add(CONTINUE,false);
 
                 proxy.setSocket(c);
@@ -295,7 +298,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 delete c;
                 c = NULL;
 
-                nat_type natType(true,ADDRESS_DEPENDENT,filterType);
+                nat_type natType(true,nat_type::ADDRESS_DEPENDENT,filterType);
                 if( try_time == _getMaxTryTime() ){ // 端口随机变化
                     natType.setPrediction(false);
                 }else{  // 设置增量为 delta_cur;

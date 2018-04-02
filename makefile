@@ -36,6 +36,7 @@ observer_inc_dir = include/observer
 
 icf_semaphore = 
 icf_exception = 
+icf_nat_type = 
 icf_object = include/Exception.h $(icf_exception)
 ifc_smart_pointer = include/Exception.h $(icf_exception)
 
@@ -84,7 +85,7 @@ icf_trans_proxy = include/Object.h $(icf_object) \
 		
 ########################################### nat_checker
 
-icf_nat_checker_common = 
+icf_nat_checker_common = include/NatType.h $(icf_nat_type)
 icf_nat_checker_client = include/Object.h $(icf_object) \
 						$(nat_checker_inc_dir)/NatCheckerCommon.h $(icf_nat_checker_common) \
 						$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)

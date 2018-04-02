@@ -4,6 +4,7 @@
 #include "../include/transmission/TransmissionProxy.h"
 #include "../include/natchecker/NatCheckerClient.h"
 #include "../socket/DefaultClientSocket.h"
+#include "../include/traversalcommand/TraversalCommand.h"
 #include "NatTraversalCommon.h"
 
 #include <sys/select.h>
@@ -72,6 +73,32 @@ bool NatTraversalClient::setReadyToAccept(bool ready){
     return true;
 }
 
+ClientSocket* NatTraversalClient::_checkNatTypeAndConnect(const ip_type& stun_ip, port_type stun_port){
+    ClientSocket *ret = NULL;
+
+    // 进行 NAT 类型检测
+    NatCheckerClient client(m_identifier,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
+    if(!client.connect(stun_ip,stun_port))
+        return ret;
+
+    // 等待 COMMAND 回复
+    TransmissionProxy proxy(m_socket);
+    TransmissionData data = proxy.read();
+
+    if(!data.isMember(TYPE))
+        return ret;
+
+    TraversalCommand *command = GetTraversalCommandByType((TraversalCommand::TraversalType)(data.getInt(TYPE)));
+    if(command == NULL)
+        return ret;
+
+    ret = command->traverse(data,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
+
+    delete command;
+
+    return ret;
+}
+
 ClientSocket* NatTraversalClient::connectToPeerHost(const std::string& identifier){
     CHECK_OPERATION_EXCEPTION(hasEnrolled());
 
@@ -85,10 +112,6 @@ ClientSocket* NatTraversalClient::connectToPeerHost(const std::string& identifie
 	// NAT 类型检测成功后，Client 等待服务器端的连接执行，是等待监听还是打洞监听还是直接连接还是扫描连接
 
     ClientSocket *ret = NULL;
-    ip_type stun_ip;
-    port_type stun_port;
-
-    NatCheckerClient client(m_identifier,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
     
     m_mtx.lock();
     m_isConnecting = true;
@@ -110,25 +133,10 @@ ClientSocket* NatTraversalClient::connectToPeerHost(const std::string& identifie
     if(!data.isMember(CAN_CONNECT) || !data.getBool(CAN_CONNECT))	// 服务器返回拒绝连接
     	goto r;
     	
-    if(!data.isMember(STUN_IP) || !data.isMember(STUN_PORT))
+    if(!data.isMember(STUN_IP) || !data.isMember(STUN_PORT))	// 如果可以连接，会携带着 NAT 类型检测的服务器地址，Client 往这个地址去连接
     	goto r;
     	
-    stun_ip = data.getString(STUN_IP);		// 如果可以连接，会携带着 NAT 类型检测的服务器地址，Client 往这个地址去连接
-    stun_port = data.getInt(STUN_PORT);
-    	
-    // 进行 NAT 类型检测
-    if(!client.connect(stun_ip,stun_port))
-    	goto r;
-    	
-    // 等待 COMMAND 回复
-    data.clear();
-    data = proxy.read();
-
-    if(!data.isMember(COMMAND))
-        goto r;
-
-    // TODO 进行穿越连接操作
-    //ret = OperationFactory::GetInstance()->StartOperation(data.getString(COMMAND),data);
+    ret = _checkNatTypeAndConnect(data.getString(STUN_IP),data.getInt(STUN_PORT));
 
 r:
     {
@@ -180,32 +188,13 @@ ClientSocket* NatTraversalClient::waitForPeerHost(){
             CHECK_STATE_EXCEPTION(ret == 1);
 
             if(isReadyToAccept()){
-                ClientSocket *ret = NULL;
-
                 TransmissionProxy proxy(m_socket);
                 TransmissionData data = proxy.read();
 
                 if(!data.isMember(STUN_IP) || !data.isMember(STUN_PORT))
-                    return ret;
+                    return NULL;
 
-                ip_type stun_ip = data.getString(STUN_IP);
-                port_type stun_port = data.getInt(STUN_PORT);
-
-                NatCheckerClient client(m_identifier,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
-
-                if(!client.connect(stun_ip,stun_port))
-                    return ret;
-
-                data.clear();
-                data = proxy.read();
-
-                if(!data.isMember(COMMAND))
-                    return ret;
-
-                // TODO
-                //ret = OperationFactory::GetInstance()->StartOperation(data.getString(COMMAND),data);
-
-                return ret;
+                return _checkNatTypeAndConnect(data.getString(STUN_IP),data.getInt(STUN_PORT));
             }else{
                 unique_lock<mutex> lck(m_mutex);
                 while(!m_isReady)

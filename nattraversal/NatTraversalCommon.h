@@ -14,7 +14,5 @@
 
 #define CAN_CONNECT "canConnect"
 
-#define COMMAND "command"
-
 #endif
 

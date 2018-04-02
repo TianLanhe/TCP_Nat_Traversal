@@ -5,6 +5,7 @@
 #include "../socket/DefaultClientSocket.h"
 #include "../socket/DefaultServerSocket.h"
 #include "../database/DefaultDataBase.h"
+#include "../include/traversalcommand/TraversalCommand.h"
 #include "NatTraversalCommon.h"
 
 #include <sys/types.h>
@@ -125,7 +126,7 @@ void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
     if(!data.isMember(IDENTIFIER))
         return;
 
-    cout << "Client \"" << data[IDENTIFIER] << "\" login out" << endl;
+    cout << "Client \"" << data[IDENTIFIER] << "\" login in" << endl;
 
     m_user_manager->addRecord(UserRecord(data.getString(IDENTIFIER),socket));
 }
@@ -157,6 +158,10 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
     }else{
         string peer_identifier;
 
+        vector<string> members = data.getMembers();
+        for(vector<string>::size_type i=0;i<members.size();++i)
+            cout << members[i] << endl;
+
         if(data.isMember(READY_TO_CONNECT))	// 内容包括 READY_TO_CONNECT ，设置用户的能否来连接字段
         {
             bool isReady = data.getBool(READY_TO_CONNECT);
@@ -164,6 +169,13 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
         }
         else if(data.isMember(PEER_HOST))	// 内容包括 PEER_HOST ，进行穿透操作
         {
+            TraversalCommand::Types types;
+            DataRecord record_a;
+            DataRecord record_b;
+
+            nat_type natType_a;
+            nat_type natType_b;
+
             bool isReady = (*userManager)[identifier].isReady();	// 先设置请求连接方为不允许建立连接，暂时屏蔽其他客户端对该客户端的连接请求
             if(isReady)											// P2P 连接建立成功后再恢复
                 (*userManager)[identifier].setReady(false);
@@ -187,8 +199,24 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             m_traversal_server->waitForDataBaseUpdate(identifier);
             m_traversal_server->waitForDataBaseUpdate(peer_identifier);
 
-            // TODO
+            record_a = m_traversal_server->m_database->getRecord(identifier);
+            record_b = m_traversal_server->m_database->getRecord(peer_identifier);
 
+            natType_a = record_a.getNatType();
+            natType_b = record_b.getNatType();
+
+            types = GetTraversalType(natType_a,natType_b);
+
+            data = GetTraversalData(types[0],natType_b,record_b.getExtAddress().ip,record_b.getExtAddress().port);
+            data.add(CAN_CONNECT,true);
+            if(!proxy.write(data))
+                goto r;
+
+            data = GetTraversalData(types[1],natType_a,record_a.getExtAddress().ip,record_a.getExtAddress().port);
+            proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
+            proxy.write(data);
+
+            return;
 r:
             data.clear();
             data.add(CAN_CONNECT,false);
