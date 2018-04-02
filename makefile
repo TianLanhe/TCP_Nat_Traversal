@@ -31,6 +31,7 @@ nat_traversal_inc_dir = include/nattraversal
 nat_checker_inc_dir = include/natchecker
 database_inc_dir = include/database
 observer_inc_dir = include/observer
+traversal_command_inc_dir = include/traversalcommand
 
 ########################################## base
 
@@ -38,7 +39,7 @@ icf_semaphore =
 icf_exception = 
 icf_nat_type = 
 icf_object = include/Exception.h $(icf_exception)
-ifc_smart_pointer = include/Exception.h $(icf_exception)
+icf_smart_pointer = include/Exception.h $(icf_exception)
 
 ########################################## socket
 
@@ -103,6 +104,18 @@ icf_subject = $(observer_inc_dir)/Observer.h $(icf_observer)
 icf_database = include/Object.h $(icf_object)
 icf_default_database = $(database_inc_dir)/DataBase.h $(icf_databse) \
 						$(observer_inc_dir)/Subject.h $(icf_subject)
+						
+########################################### traversal_command
+
+icf_traversal_command = include/Object.h $(icf_object) \
+						include/NatType.h $(icf_nat_type) \
+						$(trans_inc_dir)/TransmissionData.h $(icf_trans_data)
+icf_connect_directly = $(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command)
+icf_connect_around = $(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command)
+icf_connect_randomly = $(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command)
+icf_listen_directly = $(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command)
+icf_listen_and_punch = $(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command)
+icf_listen_and_punch_some = $(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command)
 						
 ########################################### nat_traversal
 
@@ -207,7 +220,8 @@ NatTraversalClient.o: nattraversal/NatTraversalClient.cpp \
 					$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
 					$(nat_checker_inc_dir)/NatCheckerClient.h $(icf_nat_checker_client) \
 					socket/DefaultClientSocket.h $(icf_default_client_socket) \
-					nattraversal/NatTraversalCommon.h $(icf_nat_traversal_common)
+					nattraversal/NatTraversalCommon.h $(icf_nat_traversal_common) \
+					$(traversal_command_inc_dir)//TraversalCommand.h $(icf_traversal_command)
 	g++ -c nattraversal/NatTraversalClient.cpp -std=c++11
 
 NatTraversalServer.o: nattraversal/NatTraversalServer.cpp \
@@ -218,7 +232,8 @@ NatTraversalServer.o: nattraversal/NatTraversalServer.cpp \
 					socket/DefaultClientSocket.h $(icf_default_client_socket) \
 					socket/DefaultServerSocket.h $(icf_default_server_socket) \
 					nattraversal/NatTraversalCommon.h $(icf_nat_traversal_common) \
-					database/DefaultDataBase.h $(icf_default_database)
+					database/DefaultDataBase.h $(icf_default_database) \
+					$(traversal_command_inc_dir)//TraversalCommand.h $(icf_traversal_command)
 	g++ -c nattraversal/NatTraversalServer.cpp -std=c++11
 
 NatCheckerClient.o: natchecker/NatCheckerClient.cpp \
@@ -237,6 +252,47 @@ NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
 		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
 		$(database_inc_dir)/DataBase.h $(icf_databse)
 	g++ -c natchecker/NatCheckerServer.cpp -std=c++11
+	
+TraversalCommand.o: traversalcommand/TraversalCommand.cpp \
+					$(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command) \
+					traversalcommand/ConnectDirectlyCommand.h $(icf_connect_directly) \
+					traversalcommand/ConnectAroundCommand.h $(icf_connect_around) \
+					traversalcommand/ConnectRandomlyCommand.h $(icf_connect_randomly) \
+					traversalcommand/ListenDirectlyCommand.h $(icf_listen_directly) \
+					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch) \
+					traversalcommand/ListenAndPunchRandomlyCommand.h $(icf_listen_and_punch_some)
+	g++ -c traversalcommand/TraversalCommand.cpp
+	
+ConnectDirectlyCommand.o: traversalcommand/ConnectDirectlyCommand.cpp \
+					traversalcommand/ConnectDirectlyCommand.h $(icf_connect_directly) \
+					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
+	g++ -c traversalcommand/ConnectDirectlyCommand.cpp
+
+ConnectAroundCommand.o: traversalcommand/ConnectAroundCommand.cpp \
+					traversalcommand/ConnectAroundCommand.h $(icf_connect_around)
+	g++ -c traversalcommand/ConnectAroundCommand.cpp
+	
+ConnectRandomlyCommand.o: traversalcommand/ConnectRandomlyCommand.cpp \
+					traversalcommand/ConnectRandomlyCommand.h $(icf_connect_randomly)
+	g++ -c traversalcommand/ConnectRandomlyCommand.cpp
+	
+ListenDirectlyCommand.o: traversalcommand/ListenDirectlyCommand.cpp \
+					traversalcommand/ListenDirectlyCommand.h $(icf_listen_directly) \
+					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+					$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
+					socket/ReuseServerSocket $(icf_reuse_server_socket) \
+					include/SmartPointer.h $(icf_smart_pointer)
+	g++ -c traversalcommand/ListenDirectlyCommand.cpp
+	
+ListenAndPunchCommand.o: traversalcommand/ListenAndPunchCommand.cpp \
+					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch)
+	g++ -c traversalcommand/ListenAndPunchCommand.cpp
+	
+ListenAndPunchRandomlyCommand.o: traversalcommand/ListenAndPunchCommand.cpp \
+					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch_some)
+	g++ -c traversalcommand/ListenAndPunchCommand.cpp
 
 ###########################################
 
