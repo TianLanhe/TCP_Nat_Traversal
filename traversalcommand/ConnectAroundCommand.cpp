@@ -1,8 +1,13 @@
 #include "ConnectAroundCommand.h"
-#include "../include/socket/ClientSocket.h"
-#include "../include/socket/ReuseSocketFactory.h"
+#include "../socket/ReuseClientSocket.h"
+#include "../include/SmartPointer.h"
 
 #include <unistd.h>
+#include <sys/select.h>
+#include <errno.h>
+#include <sys/socket.h>
+
+extern int errno;
 
 using namespace Lib;
 
@@ -23,21 +28,55 @@ ClientSocket* ConnectAroundCommand::traverse(const TransmissionData &data, const
     if(try_time < 2 || delta == 0)
         return NULL;
 
-    ClientSocket *ret = ReuseSocketFactory::GetInstance()->GetClientSocket();
+    fd_set set;
+    FD_ZERO(&set);
+    int maxfd = -1;
 
-    if(!ret->bind(ip,port)){
-        delete ret;
-        return NULL;
+    SmartPointer<ReuseClientSocket> sockets[try_time];
+    for(int i=0;i<try_time;++i){
+        sockets[i].reset(new ReuseClientSocket());
+
+        if(!sockets[i]->setNonBlock() || !sockets[i]->bind(ip,port))
+            return NULL;
+
+        FD_SET(sockets[i]->_getfd(),&set);
+        if(maxfd < sockets[i]->_getfd())
+            maxfd = sockets[i]->_getfd();
     }
 
     usleep(500000);
 
     for(int count=0;count < try_time && count * delta <= MAX_PORT - destiny_port;++count){
-        if(ret->connect(destiny_ip,destiny_port + count * delta,1)){
-            return ret;
+        if(sockets[count]->connect(destiny_ip.c_str(),destiny_port + count * delta,1)){
+            int fd = sockets[count]->_getfd();
+            sockets[count]->_invaild();
+            return new ReuseClientSocket(fd);
+        }else if(errno != EINPROGRESS){
+            FD_CLR(sockets[count]->_getfd(),&set);
         }
     }
 
-    delete ret;
-    return NULL;
+    struct timeval t = {5,0};
+    int ret = select(maxfd+1,NULL,&set,NULL,&t);
+
+    if(ret == -1){
+        THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
+    }else if(ret == 0){
+        return NULL;
+    }else{
+        int error;
+        socklen_t len = sizeof(int);
+        for(int i=0;i<try_time;++i){
+            if(FD_ISSET(sockets[i].get()->_getfd(),&set)){
+                ::getsockopt(sockets[i].get()->_getfd(),SOL_SOCKET,SO_ERROR,&error,&len);
+
+                if(error == 0){
+                    int fd = sockets[i].get()->_getfd();
+                    sockets[i]->_invaild();
+                    return new ReuseClientSocket(fd);
+                }
+            }
+        }
+        return NULL;
+    }
 }
