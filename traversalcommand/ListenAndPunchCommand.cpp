@@ -5,6 +5,7 @@
 #include "../include/SmartPointer.h"
 #include "../socket/ReuseServerSocket.h"
 
+#include <sys/socket.h>
 #include <sys/select.h>
 #include <thread>
 #include <unistd.h>
@@ -12,10 +13,16 @@
 using namespace std;
 using namespace Lib;
 
-void ListenAndPunchCommand::punching(ListenAndPunchCommand *command, ClientSocket *socket, const ip_type& destiny_ip, port_type destiny_port)
+void ListenAndPunchCommand::punching(ListenAndPunchCommand *command, ClientSocket *socket,  int serverFd, const ip_type& destiny_ip, port_type destiny_port)
 {
     while(command->shouldPunch){
-        socket->connect(destiny_ip,destiny_port,1);
+        if(!socket->isConnected()){
+            socket->connect(destiny_ip,destiny_port,1);
+        }else{
+            command->shouldPunch = false;
+            shutdown(serverFd,SHUT_RD);
+            break;
+        }
         sleep(1);
     }
 }
@@ -28,27 +35,35 @@ ClientSocket* ListenAndPunchCommand::traverse(const TransmissionData &data, cons
         return NULL;
 
     SmartPointer<ServerSocket> server(ReuseSocketFactory::GetInstance()->GetServerSocket());
-    SmartPointer<ClientSocket> client(ReuseSocketFactory::GetInstance()->GetClientSocket());
+    ClientSocket *client = ReuseSocketFactory::GetInstance()->GetClientSocket();
 
-    if(!client->setNonBlock() || !client->bind(ip,port))
+    if(!client->setNonBlock() || !client->bind(ip,port)){
+        delete client;
         return NULL;
+    }
 
-    if(!server->bind(ip,port))
+    if(!server->bind(ip,port)){
+        delete client;
         return NULL;
+    }
 
-    if(!server->listen(1))
+    if(!server->listen(1)){
+        delete client;
         return NULL;
+    }
 
     ReuseServerSocket *reuseSocket = dynamic_cast<ReuseServerSocket*>(server.get());
-    if(reuseSocket == NULL)
+    if(reuseSocket == NULL){
+        delete client;
         return NULL;
+    }
 
     struct timeval t = {5,0};
     fd_set set;
     FD_ZERO(&set);
     FD_SET(reuseSocket->_getfd(),&set);
 
-    thread punch_thread(ListenAndPunchCommand::punching,this,client.get(),data.getString(DESTINY_IP),data.getInt(DESTINY_PORT));
+    thread punch_thread(ListenAndPunchCommand::punching,this,client,reuseSocket->_getfd(),data.getString(DESTINY_IP),data.getInt(DESTINY_PORT));
 
     int ret = select(reuseSocket->_getfd()+1,&set,NULL,NULL,&t);
 
@@ -61,11 +76,20 @@ ClientSocket* ListenAndPunchCommand::traverse(const TransmissionData &data, cons
     }else{
         CHECK_STATE_EXCEPTION(ret == 1);
 
-        ClientSocket *client = server->accept();
+        ClientSocket *ret = NULL;
 
-        shouldPunch = false;
-        punch_thread.join();
+        if(shouldPunch){
+            ret = server->accept();
 
-        return client;
+            shouldPunch = false;
+            punch_thread.join();
+
+            delete client;
+        }else{
+            ret = client;
+            punch_thread.join();
+        }
+
+        return ret;
     }
 }

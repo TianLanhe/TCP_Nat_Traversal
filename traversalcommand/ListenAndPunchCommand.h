@@ -13,7 +13,7 @@ public:
     virtual ClientSocket* traverse(const TransmissionData &, const ip_type &, port_type);
 
 private:
-    static void punching(ListenAndPunchCommand*,ClientSocket*,const ip_type&,port_type);
+    static void punching(ListenAndPunchCommand*,ClientSocket*,int,const ip_type&,port_type);
 
     bool shouldPunch;
 };
