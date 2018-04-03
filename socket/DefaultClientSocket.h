@@ -13,15 +13,15 @@ class DefaultClientSocket : public ClientSocket
 
 public:
 	DefaultClientSocket() :m_bHasConnect(false) { }
-	explicit DefaultClientSocket(int socket);		// 本来想写成protected的，但是这样得申明DefaultServerSocket是它的友元，想想还是这么处理吧
-    DefaultClientSocket(int socket,const std::string& addr,port_type port);
+    explicit DefaultClientSocket(int socket);		// Review: 本来想写成protected的，但是这样得申明DefaultServerSocket是它的友元，想想还是这么处理吧
+    DefaultClientSocket(int socket,const ip_type& addr,port_type port);
 
 	virtual bool open() { return m_socket.open(); }
 	virtual bool close();
 	virtual bool isOpen() const { return m_socket.isOpen(); }
 
     virtual bool bind(port_type port) { return m_socket.bind("",port); }
-    virtual bool bind(const std::string& addr, port_type port) { return m_socket.bind(addr,port); }
+    virtual bool bind(const ip_type& addr, port_type port) { return m_socket.bind(addr,port); }
 	virtual bool isBound() const { return m_socket.isBound(); }
 
 	virtual std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节
@@ -33,17 +33,17 @@ public:
     virtual bool setNonBlock(bool flag = true);
 
 	virtual port_type getPort() const { return m_socket._port(); }
-	virtual std::string getAddr() const { return m_socket._addr(); }
+    virtual ip_type getAddr() const { return m_socket._addr(); }
 
 	virtual port_type getPeerPort() const;
-	virtual std::string getPeerAddr() const;
+    virtual ip_type getPeerAddr() const;
 
 public:
     int _getfd(){ return m_socket._socket(); }		// 提供给 NatTraversalClient 的特殊函数
 
 protected:
 
-    size_t _getMaxTryTime() const { return 10; }
+    size_t _getMaxTryTime() const { return 5; }
 
     size_t _getSleepTime() const { return 1 * 1000000; }
 

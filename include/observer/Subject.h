@@ -29,6 +29,8 @@ public:
 		for(std::vector<Observer*>::size_type i=0;i<m_observers.size();++i)
 			m_observers[i]->notify(msg);
 	}
+
+    virtual ~Subject(){ }
 	
 protected:
 	std::vector<Observer*> m_observers;

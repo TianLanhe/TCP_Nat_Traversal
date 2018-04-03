@@ -81,17 +81,19 @@ ClientSocket* NatTraversalClient::_checkNatTypeAndConnect(const ip_type& stun_ip
     if(!client.connect(stun_ip,stun_port))
         return ret;
 
-    // 等待 COMMAND 回复
+    // 等待 TYPE 回复
     TransmissionProxy proxy(m_socket);
     TransmissionData data = proxy.read();
 
     if(!data.isMember(TYPE))
         return ret;
 
+    // 根据穿越的 TYPE 取得对应的具体穿越操作
     TraversalCommand *command = GetTraversalCommandByType((TraversalCommand::TraversalType)(data.getInt(TYPE)));
     if(command == NULL)
         return ret;
 
+	// 进行穿越操作，返回连接的 socket
     ret = command->traverse(data,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
 
     delete command;

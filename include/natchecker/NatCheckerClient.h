@@ -16,21 +16,20 @@ public:
     typedef typename ClientSocket::port_type port_type;
 
 public:
-    NatCheckerClient(const std::string&,const std::string&, port_type);
+    NatCheckerClient(const std::string&,const ip_type&, port_type);
     ~NatCheckerClient();
 
-    // Review: maybe should spilt into several operation
-    bool connect(const std::string& addr, port_type port);
+    bool connect(const ip_type& addr, port_type port);
 
-    bool bind(const std::string& addr, port_type port);
+    bool bind(const ip_type& addr, port_type port);
     bool isBound() const;
 
     nat_type getNatType() const { return m_natType; }
 
-    std::string getExternAddr() const;
+    ip_type getExternAddr() const;
     port_type getExternPort() const;
 
-    std::string getLocalAddr() const;
+    ip_type getLocalAddr() const;
     port_type getLocalPort() const;
 
 protected:
@@ -46,7 +45,7 @@ private:
     ClientSocket *m_socket;					// 因为怕关闭连接后端口归还给 NAT 后 NAT 会复用这些端口，经测试并没有影响，这里先不存储吧
     nat_type m_natType;
 
-    std::string m_ext_addr;
+    ip_type m_ext_addr;
     port_type m_ext_port;
 
     bool m_isConnected;

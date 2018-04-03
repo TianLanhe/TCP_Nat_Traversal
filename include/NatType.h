@@ -9,10 +9,10 @@ namespace Lib{
         typedef unsigned short port_type;
 
         enum map_type{
-            UNKNOWN,
-            ENDPOINT_INDEPENDENT,
-            ADDRESS_DEPENDENT,
-            ADDRESS_AND_PORT_DEPENDENT
+            UNKNOWN,					// 未知
+            ENDPOINT_INDEPENDENT,		// 终端无关型
+            ADDRESS_DEPENDENT,			// 地址相关型
+            ADDRESS_AND_PORT_DEPENDENT	// 地址和端口相关型(端口相关型)
         };
 
         typedef map_type filter_type;
@@ -50,7 +50,7 @@ namespace Lib{
 
     private:
         bool m_isPredictable;			// Review: 目前设计为客户端不知道 NAT 是否可预测以及预测增量是多少，只有服务器端知道这两个信息
-        port_type m_port_delta;			// 客户端根据服务器的指令打洞或连接或监听，不需要知道 NAT 是否的这两个信息
+        port_type m_port_delta;			// 客户端根据服务器的指令打洞或连接或监听，不需要知道 NAT 的这两个信息
 
         bool m_haveNat;
         map_type m_map;

@@ -42,7 +42,7 @@ size_t DefaultServerSocket::write(const char* content)
 
 bool DefaultServerSocket::listen(int num)
 {
-	CHECK_OPERATION_EXCEPTION(!m_bIsListen);
+    CHECK_OPERATION_EXCEPTION(!m_bIsListen && isBound());
 
 	int ret = ::listen(m_socket._socket(), num);	//设置最大监听数并监听
 
@@ -54,10 +54,9 @@ bool DefaultServerSocket::listen(int num)
 
 ClientSocket* DefaultServerSocket::accept()
 {
-    struct sockaddr_in cli_addr;
-    socklen_t len = sizeof(cli_addr);
+    CHECK_OPERATION_EXCEPTION(isListen());
 
-    int client_socket = ::accept(m_socket._socket(), (struct sockaddr*)&cli_addr, &len);
+    int client_socket = ::accept(m_socket._socket(), NULL, NULL);
 
-    return (client_socket == -1 ? NULL : new DefaultClientSocket(client_socket,inet_ntoa(cli_addr.sin_addr),ntohs(cli_addr.sin_port)));
+    return (client_socket == -1 ? NULL : new DefaultClientSocket(client_socket,m_socket._addr(),m_socket._port()));
 }

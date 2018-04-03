@@ -45,10 +45,7 @@ class DataBase;
 class NatCheckerServer : public Object
 {
 public:
-    typedef ServerSocket::port_type port_type;
-
-public:
-    NatCheckerServer(const std::string&, port_type, const std::string&, port_type);
+    NatCheckerServer(const ip_type&, port_type, const ip_type&, port_type);
     ~NatCheckerServer();
 
     bool setDataBase(DataBase<DataRecord>*);

@@ -12,9 +12,9 @@ LIB_BEGIN
 
 // 要求存储的记录对象有 getIdentifier 这个函数
 template < typename T >
-class DefaultDataBase : public DataBase<T> , public Subject
-{
-public:
+class DefaultDataBase : public DataBase<T> , public Subject		// 继承"被观察者"基类，用于通知观察者存储事件或者删除事件的发生
+{																// 这里主要用处是主服务器通知客户端检测 NAT 类型后，会阻塞等待，直到
+public:															// NatCheckerServer 成功将记录添加到数据库中，数据库通知观察者，唤醒主服务器
     typedef typename DataBase<T>::Members Members;
 
 public:
@@ -90,7 +90,7 @@ bool DefaultDataBase<T>::addRecord(const T& record) {
     m_mutex.lock();
 
     if(m_map.find(record.getIdentifier()) != m_map.end())
-    //	return false;
+    //	return false;							// 因为这里只是简单的用 map 存储，所以添加时若存在之前的记录，则会覆盖之前存在的记录
         m_map.erase(record.getIdentifier());
 
     m_map.insert(std::pair<std::string,T>(record.getIdentifier(),record));

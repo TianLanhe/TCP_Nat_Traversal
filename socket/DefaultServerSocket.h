@@ -18,7 +18,7 @@ public:
 	virtual bool close();
 
     virtual bool bind(port_type port) { return m_socket.bind("", port); }
-    virtual bool bind(const std::string& addr, port_type port) { return m_socket.bind(addr, port); }
+    virtual bool bind(const ip_type& addr, port_type port) { return m_socket.bind(addr, port); }
 	virtual bool isBound() const { return m_socket.isBound(); }
 
 	virtual std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节
@@ -30,7 +30,7 @@ public:
 	virtual ClientSocket* accept();
 
 	virtual port_type getPort() const { return m_socket._port(); }
-	virtual std::string getAddr() const { return m_socket._addr(); }
+    virtual ip_type getAddr() const { return m_socket._addr(); }
 
 public:
     int _getfd(){ return m_socket._socket(); }		// 提供给 NatTraversalServer 的特殊函数

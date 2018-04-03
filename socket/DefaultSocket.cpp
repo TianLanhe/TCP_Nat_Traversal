@@ -21,7 +21,7 @@ DefaultSocket::DefaultSocket(int socket)
 	}
 }
 
-DefaultSocket::DefaultSocket(int socket,const string& addr,port_type port){
+DefaultSocket::DefaultSocket(int socket,const ip_type& addr,port_type port){
     invalid();
 
     m_socket = socket;
@@ -86,7 +86,7 @@ void DefaultSocket::invalid() {
 	m_addr = "";
 }
 
-bool DefaultSocket::bind(const std::string& addr, port_type port) {
+bool DefaultSocket::bind(const ip_type& addr, port_type port) {
 	CHECK_OPERATION_EXCEPTION(isOpen() && !isBound());
 
 	struct sockaddr_in cli_addr;

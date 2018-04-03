@@ -15,11 +15,10 @@ using namespace Lib;
 typedef nat_type::filter_type filter_type;
 typedef nat_type::map_type map_type;
 
-NatCheckerServer::NatCheckerServer(const string& main_addr, port_type main_port, const string& another_addr, port_type another_port)
+NatCheckerServer::NatCheckerServer(const ip_type& main_addr, port_type main_port, const ip_type& another_addr, port_type another_port)
     :m_main_addr(main_addr),m_main_port(main_port),
       m_another_addr(another_addr),m_another_port(another_port){
     m_main_server = ReuseSocketFactory::GetInstance()->GetServerSocket();
-    CHECK_NO_MEMORY_EXCEPTION(m_main_server);
 }
 
 NatCheckerServer::~NatCheckerServer(){
@@ -60,11 +59,11 @@ void NatCheckerServer::handle_request(ClientSocket* client){
     if(!data.isMember(LOCAL_IP) || !data.isMember(LOCAL_PORT) || !data.isMember(IDENTIFIER))
         return;
 
-    string local_ip = data.getString(LOCAL_IP);
+    ip_type local_ip = data.getString(LOCAL_IP);
     port_type local_port = data.getInt(LOCAL_PORT);
 
-    string ext_ip = client->getAddr();
-    port_type ext_port = client->getPort();
+    ip_type ext_ip = client->getPeerAddr();
+    port_type ext_port = client->getPeerPort();
 
     DataRecord record;
     record.setIdentifier(data.getString(IDENTIFIER));
@@ -121,8 +120,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
         else
         {
         	// 若无法连接上，则关闭原来的 Client Socket，重新打开一个，绑定地址为 IP1:Port2，并尝试连接
-            if(!(c->close() && c->open() &&
-                 c->bind(m_main_addr,m_another_port))){
+            if(!(c->reopen() && c->bind(m_main_addr,m_another_port))){
                 delete c;
                 return;
             }
@@ -168,8 +166,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
 
         c = s->accept();
 
-        string ext_ip2 = c->getAddr();
-        port_type ext_port2 = c->getPort();
+        string ext_ip2 = c->getPeerAddr();
+        port_type ext_port2 = c->getPeerPort();
         
         // TODO
    	 	cout << "ext_ip2: " << ext_ip2 << endl;
@@ -209,7 +207,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             data.add(CHANGE_IP,m_another_addr);
             data.add(CHANGE_PORT,m_another_port);
 
-            if(!(s->close() && s->open() &&
+            if(!(s->reopen() &&
                  s->bind(m_another_addr,m_another_port) &&
                  s->listen(DEFAULT_LISTEN_NUM)))
                 return;
@@ -220,8 +218,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             delete c;
             c = s->accept();
 
-        	string ext_ip3 = c->getAddr();
-        	port_type ext_port3 = c->getPort();
+            string ext_ip3 = c->getPeerAddr();
+            port_type ext_port3 = c->getPeerPort();
         
    	 		cout << "ext_ip3: " << ext_ip3 << endl;
     		cout << "ext_port3: " << ext_port3 << endl;
@@ -277,8 +275,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                     delete c;
                     c = s->accept();
 
-                    string ext_ip_n = c->getAddr();
-                    port_type ext_port_n = c->getPort();
+                    string ext_ip_n = c->getPeerAddr();
+                    port_type ext_port_n = c->getPeerPort();
 
                     cout << "ext_ip_n: " << ext_ip_n << endl;
                     cout << "ext_port_n: " << ext_port_n << endl;

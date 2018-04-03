@@ -46,5 +46,8 @@ void Semaphore::release(){
     sem_b.sem_op = 1;  // V()
     sem_b.sem_flg = SEM_UNDO;
 
-    semop(m_semid, &sem_b, 1);
+    int ret;
+    do{
+        ret = semop(m_semid, &sem_b, 1);
+    }while(ret == -1 && errno == EINTR);
 }

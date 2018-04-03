@@ -7,11 +7,11 @@
 using namespace Lib;
 using namespace std;
 
-NatCheckerClient::NatCheckerClient(const string& identifier, const string& addr, port_type port):m_identifier(identifier),m_isConnected(false),m_socket(NULL){
+NatCheckerClient::NatCheckerClient(const string& identifier, const ip_type& addr, port_type port):m_identifier(identifier),m_isConnected(false),m_socket(NULL){
     bind(addr,port);
 }
 
-bool NatCheckerClient::bind(const string& addr, port_type port){
+bool NatCheckerClient::bind(const ip_type& addr, port_type port){
     CHECK_OPERATION_EXCEPTION(!isBound());
 
     ClientSocket *client = ReuseSocketFactory::GetInstance()->GetClientSocket();
@@ -37,7 +37,7 @@ NatCheckerClient::~NatCheckerClient(){
         delete m_socket;
 }
 
-std::string NatCheckerClient::getExternAddr() const {
+typename NatCheckerClient::ip_type NatCheckerClient::getExternAddr() const {
     CHECK_OPERATION_EXCEPTION(isConnected());
 
     return m_ext_addr;
@@ -49,7 +49,7 @@ typename NatCheckerClient::port_type NatCheckerClient::getExternPort() const {
     return m_ext_port;
 }
 
-string NatCheckerClient::getLocalAddr() const {
+typename NatCheckerClient::ip_type NatCheckerClient::getLocalAddr() const {
     CHECK_OPERATION_EXCEPTION(isBound());
 
     return _getMainSocket()->getAddr();
@@ -61,7 +61,7 @@ typename NatCheckerClient::port_type NatCheckerClient::getLocalPort() const {
     return _getMainSocket()->getPort();
 }
 
-bool NatCheckerClient::connect(const std::string& addr, port_type port){
+bool NatCheckerClient::connect(const ip_type& addr, port_type port){
     CHECK_OPERATION_EXCEPTION(_getMainSocket());
 
     ClientSocket *client = _getMainSocket();
@@ -73,7 +73,7 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
 
     // 若存在 NAT，服务器会探测其 Filter 类型，需要这边在相同地址和端口监听连接（无需其他操作，只为 STUN 服务器连接内网，结束后删除即可）
     ServerSocket *server = ReuseSocketFactory::GetInstance()->GetServerSocket();
-    if(!server->bind(client->getAddr(),client->getPort()) || !server->listen(5)){
+    if(!server->bind(client->getAddr(),client->getPort()) || !server->listen(DEFAULT_LISTEN_NUM)){
         delete server;
         return false;
     }
@@ -130,7 +130,7 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
         if(!data.isMember(CHANGE_IP) || !data.isMember(CHANGE_PORT))
             return false;
 
-        string changeIp = data.getString(CHANGE_IP);
+        ip_type changeIp = data.getString(CHANGE_IP);
         port_type changePort = data.getInt(CHANGE_PORT);
 
         ClientSocket *c = ReuseSocketFactory::GetInstance()->GetClientSocket();
@@ -161,7 +161,7 @@ bool NatCheckerClient::connect(const std::string& addr, port_type port){
 
     m_natType.setNatType(true,mapType,filterType);
     m_isConnected = true;
-    // Review: 如何处理那些连接的socket
+    // Review: 如何处理client
     return true;
 }
 

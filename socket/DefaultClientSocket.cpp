@@ -17,7 +17,7 @@ DefaultClientSocket::DefaultClientSocket(int socket) :m_socket(socket)
 		m_bHasConnect = true;
 }
 
-DefaultClientSocket::DefaultClientSocket(int socket,const string& addr,port_type port) :m_socket(socket,addr,port)
+DefaultClientSocket::DefaultClientSocket(int socket,const ip_type& addr,port_type port) :m_socket(socket,addr,port)
 {
     if (m_socket._socket() != -1)
         m_bHasConnect = true;
@@ -95,7 +95,7 @@ typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() const
 	return ntohs(server_addr.sin_port);
 }
 
-std::string DefaultClientSocket::getPeerAddr() const {
+typename DefaultClientSocket::ip_type DefaultClientSocket::getPeerAddr() const {
 	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
 
 	struct sockaddr_in server_addr;
