@@ -6,6 +6,7 @@
 #include "../socket/ServerSocket.h"
 
 #include <string>
+#include <vector>
 
 LIB_BEGIN
 
@@ -38,6 +39,7 @@ private:
 };
 
 class ClientSocket;
+class DefaultClientSocket;
 
 template < typename T >
 class DataBase;
@@ -69,6 +71,8 @@ private:
     port_type m_another_port;
 
     DataBase<DataRecord> *m_database;
+
+    std::vector<DefaultClientSocket*> m_clientVec;
 };
 
 LIB_END

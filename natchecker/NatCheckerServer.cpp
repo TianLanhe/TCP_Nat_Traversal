@@ -1,13 +1,20 @@
 #include "../include/natchecker/NatCheckerServer.h"
 #include "../include/socket/ClientSocket.h"
+#include "../socket/DefaultClientSocket.h"
+#include "../socket/DefaultServerSocket.h"
 #include "../include/socket/ReuseSocketFactory.h"
 #include "../include/transmission/TransmissionData.h"
 #include "../include/transmission/TransmissionProxy.h"
 #include "../include/database/DataBase.h"
 
+#include <sys/select.h>
+#include <errno.h>
+
 #include <thread>
 #include <iostream>
 #include <string>
+
+extern int errno;
 
 using namespace std;
 using namespace Lib;
@@ -250,6 +257,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 nat_type natType(true,nat_type::ADDRESS_DEPENDENT,filterType);
                 natType.setPrediction(true,ext_port2 - ext_port);
                 record.setNatType(natType);
+                // 第2次的外网与第1次的不同，第3次与第2次的相同，表示是地址相关的 Map 类型，记得更新 DataRecord 的外部地址，以最新的为准
+                record.setExtAddress(Address(ext_ip2,ext_port2 - ext_port + ext_port2));
             }
             else // 第3次与第2次的端口不同，表示时 Address And Port Dependent
             {
@@ -257,6 +266,9 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             	int delta_cur = ext_port3 - ext_port2;
                 size_t try_time = 0;
                 port_type ext_port_pre = ext_port3;
+
+                ip_type ext_ip_n;
+                port_type ext_port_n;
             	
                 while( (delta_pre != delta_cur || delta_cur + ext_port_pre >= 65535) && try_time++ < _getMaxTryTime()){
                     data.clear();
@@ -275,8 +287,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                     delete c;
                     c = s->accept();
 
-                    string ext_ip_n = c->getPeerAddr();
-                    port_type ext_port_n = c->getPeerPort();
+                    ext_ip_n = c->getPeerAddr();
+                    ext_port_n = c->getPeerPort();
 
                     cout << "ext_ip_n: " << ext_ip_n << endl;
                     cout << "ext_port_n: " << ext_port_n << endl;
@@ -303,13 +315,14 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                     natType.setPrediction(true,delta_cur);
                 }
                 record.setNatType(natType);
+                record.setExtAddress(Address(ext_ip_n,ext_port_n + delta_cur));	// 记得更新 DataRecord 的外部地址，以最新的为准
             }
         }
         delete s;
         s = NULL;
     }
-    delete client;
-    client = NULL;
+    //delete client;		// 注意这里不能把 STUN 服务器与 client 发过来的第一次连接给断掉，因为有些对称型 NAT 第一次连接是用内网的源端口
+    //client = NULL;			，第二次开始才从一个随机值进行递增分配，如果把这第一次连接断掉了，NAT 可能会复用这个端口，端口猜测会无效
 
     CHECK_STATE_EXCEPTION(m_database->addRecord(record));
 }
@@ -318,8 +331,81 @@ void NatCheckerServer::waitForClient(){
     if(!m_main_server->isListen() && !setListenNum(DEFAULT_LISTEN_NUM))
         THROW_EXCEPTION(InvalidOperationException,"bind or listen error");
 
-    ClientSocket *client;
+    /*ClientSocket *client;
     while(client = m_main_server->accept()){
         handle_request(client);			// 目前的处理是不要并发执行，来一个处理一个，因为检测 NAT 类型的过程中会等待对方发起连接，如果并发会混，也许这个线程接受到的 socket 连接是另一个线程需要的
+    }*/
+    // 由于不能立即删了第一次连接的 client，故这里采用 I/O 多路转接的方式，能够监听到 client 断开连接的情况，由客户端主动断开
+
+    DefaultServerSocket *m_socket = dynamic_cast<DefaultServerSocket*>(m_main_server);
+    CHECK_STATE_EXCEPTION(m_socket);
+
+    fd_set set;
+    int ret,maxfd;
+    while(1)
+    {
+        FD_ZERO(&set);
+
+        FD_SET(m_socket->_getfd(),&set);		// 把服务器 Socket 和所有接受到的客户端连接 Socket 都添加到 set 中
+        maxfd = m_socket->_getfd();
+
+        int fd;
+        for(vector<DefaultClientSocket*>::size_type i=0;i<m_clientVec.size();++i){
+            fd = m_clientVec[i]->_getfd();
+
+            FD_SET(fd,&set);
+
+            if(maxfd < fd)
+                maxfd = fd;
+        }
+
+        ret = select(maxfd+1,&set,NULL,NULL,NULL);
+
+        if(ret == -1)
+        {
+            if(errno == EINTR)
+                cout << "Warning : NatCheckerServer is interrupted at function select in NatCheckerServer::waitForClient" << endl;
+            else
+                THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
+        }else if(ret == 0)
+        {
+            THROW_EXCEPTION(ErrorStateException,"select timeout in NatTraversalServer::waitForClient");
+        }else
+        {
+            // 如果服务器端可读，亦即有新客户端请求连接，则接收连接，为其服务，进行 NAT 类型检测
+            if(FD_ISSET(m_socket->_getfd(),&set))
+            {
+                ClientSocket *client = m_socket->accept();
+
+                DefaultClientSocket *defaultSocket = dynamic_cast<DefaultClientSocket*>(client);
+                CHECK_STATE_EXCEPTION(defaultSocket);
+
+                m_clientVec.push_back(defaultSocket);
+
+                handle_request(client);
+
+                --ret;
+            }
+
+            // 遍历存储的客户端 socket 判断是否可读，若可读客户端断开连接
+            for(vector<DefaultClientSocket*>::iterator it = m_clientVec.begin(); it != m_clientVec.end() && ret != 0;){
+                if(FD_ISSET((*it)->_getfd(),&set))
+                {
+                    string content = (*it)->read();
+                    CHECK_STATE_EXCEPTION(content.empty());
+
+                    cout << "NatChecker: Client \"" << (*it)->getPeerAddr() << ':' << (*it)->getPeerPort() << "\" close" << endl;
+
+                    delete (*it);
+
+                    --ret;
+                    it = m_clientVec.erase(it);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        }
     }
 }

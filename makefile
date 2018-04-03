@@ -251,6 +251,8 @@ NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
 		$(nat_checker_inc_dir)/NatCheckerServer.h $(icf_nat_checker_server) \
 		$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
 		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+		socket/DefaultClientSocket.h $(icf_default_client_socket) \
+		socket/DefaultServerSocket.h $(icf_default_server_socket) \
 		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
 		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
 		$(database_inc_dir)/DataBase.h $(icf_databse)

@@ -150,15 +150,16 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
 
     data = proxy.read();
 
-    if(data.empty()){	// 读取到的内容是空的，表示连接已关闭
+    if(data.empty())
+    {	// 读取到的内容是空的，表示连接已关闭
         delete socket;
         userManager->removeRecord(identifier);
 
         cout << "Client \"" << identifier << "\" login out" << endl;
-    }else{
-        string peer_identifier;
-
-        if(data.isMember(READY_TO_CONNECT))	// 内容包括 READY_TO_CONNECT ，设置用户的能否来连接字段
+    }
+    else
+    {
+        if(data.isMember(READY_TO_CONNECT))	// 内容包括 READY_TO_CONNECT ，设置用户的能否连接字段
         {
             bool isReady = data.getBool(READY_TO_CONNECT);
             userManager->getRecord(identifier).setReady(isReady);
@@ -168,26 +169,29 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
         else if(data.isMember(PEER_HOST))	// 内容包括 PEER_HOST ，进行穿透操作
         {
             TraversalCommand::Types types;
-            DataRecord record_a;
-            DataRecord record_b;
+            vector<DataRecord> records(2);
+            vector<nat_type> natTypes(2);
+            vector<string> identifiers(2);
+            vector<ClientSocket*> sockets(2);
+            int firstSend = 0;
 
-            nat_type natType_a;
-            nat_type natType_b;
-
-            bool isReady = (*userManager)[identifier].isReady();	// 先设置请求连接方为不允许建立连接，暂时屏蔽其他客户端对该客户端的连接请求
-            if(isReady){											// P2P 连接建立成功后再恢复
+            // 先设置请求连接方为不允许建立连接，暂时屏蔽其他客户端对该客户端的连接请求,P2P 连接建立成功后再恢复
+            bool isReady = (*userManager)[identifier].isReady();
+            if(isReady){
                 (*userManager)[identifier].setReady(false);
                 cout << "set Client \"" << identifier << "\" not ready" << endl;
             }
 
             cout << "Client \"" << identifier << "\" want to connect with Client \"" << data.getString(PEER_HOST) << "\"" << endl;
 
-            peer_identifier = data.getString(PEER_HOST);
+            // 读取客户端发送过来的字段 PEER_HOST，判断准备连接的对等方是否已经登录以及是否允许连接
+            string peer_identifier = data.getString(PEER_HOST);
             if(!userManager->hasRecord(peer_identifier) || !(*userManager)[peer_identifier].isReady()){
                 cout << "Client \"" << peer_identifier << "\" has logined out" << endl;
                 goto r;
             }
 
+			// 对等方已登录且允许连接，向客户端发送允许连接信令，同时发送 STUN 的地址，让其进行 NAT 类型检测
             data.clear();
             data.add(CAN_CONNECT,true);
             data.add(STUN_IP,m_traversal_server->m_main_ip);
@@ -195,42 +199,64 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
 
             if(!proxy.write(data))
                 goto r;
-
             cout << "Client \"" << identifier << "\" start to checker NAT type" << endl;
 
+			// 向对等方发送 STUN 的地址，让其进行 NAT 类型检测(对等方已经随时监听着)
             data.remove(CAN_CONNECT);
             proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
             proxy.write(data);
-
             cout << "Client \"" << peer_identifier << "\" start to checker NAT type" << endl;
 
+			// Review: 这里会阻塞等待 NAT 类型检测完成，如果客户端和对等方发送问题，这里整个服务器会永远阻塞出不来
+			// 等待客户端 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(identifier);
             cout << "Client \"" << identifier << "\" finish to checker NAT type" << endl;
 
+			// 等待对方等 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(peer_identifier);
             cout << "Client \"" << peer_identifier << "\" finish to checker NAT type" << endl;
 
-            record_a = m_traversal_server->m_database->getRecord(identifier);
-            record_b = m_traversal_server->m_database->getRecord(peer_identifier);
+			// 两方 NAT 类型检测完成，从数据库中取出两方的外部地址与 NAT 类型信息
+            records[0] = m_traversal_server->m_database->getRecord(identifier);
+            records[1] = m_traversal_server->m_database->getRecord(peer_identifier);
 
-            natType_a = record_a.getNatType();
-            natType_b = record_b.getNatType();
+            natTypes[0] = records[0].getNatType();
+            natTypes[1] = records[1].getNatType();
 
-            types = GetTraversalType(natType_a,natType_b);
+			identifiers[0] = identifier;
+			identifiers[1] = peer_identifier;
+			
+			sockets[0] = socket;
+			sockets[1] = userManager->getRecord(peer_identifier).getClientSocket();
 
-            data = GetTraversalData(types[0],natType_b,record_b.getExtAddress().ip,record_b.getExtAddress().port);
-            data.add(CAN_CONNECT,true);
-            proxy.setSocket(socket);
+			// 根据 NAT 类型信息判断两方该采取什么操作
+            types = GetTraversalType(natTypes[0],natTypes[1]);
+            
+            // 这里判断了一下哪方是 Listen 的，给 Listen 的一方先发送数据，以使 Listen 的一方能在对方 Connect 之前准备好，Connect 客户端那边也会
+            // 休眠一段时间(0.5s)以保证 Listen 一方准备好
+            if(types[0] == TraversalCommand::LISTEN_BY_PUNCHING_A_HOLE ||
+                types[0] == TraversalCommand::LISTEN_BY_PUNCHING_SOME_HOLE ||
+                types[0] == TraversalCommand::LISTEN_DIRECTLY)
+            {
+                firstSend = 0;
+            }
+            else
+            {
+                firstSend = 1;
+            }
+
+            data = GetTraversalData(types[firstSend],natTypes[1-firstSend],records[1-firstSend].getExtAddress().ip,records[1-firstSend].getExtAddress().port);
+            proxy.setSocket(sockets[firstSend]);
             if(!proxy.write(data))
                 goto r;
 
-            cout << "send traversal command to Client \"" << identifier << "\"" << endl;
+            cout << "send traversal command to Client \"" << identifiers[firstSend] << "\"" << endl;
 
-            data = GetTraversalData(types[1],natType_a,record_a.getExtAddress().ip,record_a.getExtAddress().port);
-            proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
+            data = GetTraversalData(types[1-firstSend],natTypes[firstSend],records[firstSend].getExtAddress().ip,records[firstSend].getExtAddress().port);
+            proxy.setSocket(sockets[1-firstSend]);
             proxy.write(data);
 
-            cout << "send traversal command to Client \"" << peer_identifier << "\"" << endl;
+            cout << "send traversal command to Client \"" << identifiers[1-firstSend] << "\"" << endl;
 
             return;
 r:
