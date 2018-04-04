@@ -61,9 +61,10 @@ vector<string> getLocalIps(){
 bool NatTraversalServer::init(){
     vector<string> ips = getLocalIps();
 
-    log("NatTraversalServer: ","ip in this host:");
+    string content;
     for(vector<string>::size_type i=0;i<ips.size();++i)
-        log(ips[i]);
+        content.append('\"' + ips[i] + "\" ");
+    log("NatTraversalServer: ","ip in this host: ",content);
 
     if(ips.size() < 2)
         return false;

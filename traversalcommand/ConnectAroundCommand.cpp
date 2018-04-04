@@ -52,8 +52,9 @@ ClientSocket* ConnectAroundCommand::traverse(const TransmissionData &data, const
 	// 开始连接，一口气发出 try_time 个连接，然后调用 select 阻塞等待连接结果
     for(int count=0;count < try_time && count * delta <= MAX_PORT - destiny_port;++count){
         if(sockets[count]->connect(destiny_ip.c_str(),destiny_port + count * delta,1)){	// 直接连接成功，不用后面的 select，直接返回该 socket
+            sockets[count]->setNonBlock(false);
             int fd = sockets[count]->_getfd();
-            sockets[count]->_invaild();
+            sockets[count]->_invalid();
             return new ReuseClientSocket(fd);
         }else if(errno != EINPROGRESS){					// 若 errno == EINPROGRESS ，表示正在后台进行连接，属于正常情况，会在后面 select 中处理
             FD_CLR(sockets[count]->_getfd(),&set);		// 否则表示确定连接失败，将该 socket 从 fd_set 中删除，不用等它了
@@ -81,7 +82,7 @@ ClientSocket* ConnectAroundCommand::traverse(const TransmissionData &data, const
                 	sockets[i]->setNonBlock(false);			// 恢复阻塞属性
                 	
                     int fd = sockets[i].get()->_getfd();
-                    sockets[i]->_invaild();
+                    sockets[i]->_invalid();
                     
                     return new ReuseClientSocket(fd);
                 }

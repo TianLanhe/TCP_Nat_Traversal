@@ -285,10 +285,10 @@ ConnectAroundCommand.o: traversalcommand/ConnectAroundCommand.cpp \
 
 ConnectRandomlyCommand.o: traversalcommand/ConnectRandomlyCommand.cpp \
 					traversalcommand/ConnectRandomlyCommand.h $(icf_connect_randomly) \
-					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
-					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
-	g++ -c traversalcommand/ConnectRandomlyCommand.cpp
-	
+					socket/ReuseClientSocket.h $(icf_reuse_client_socket) \
+					include/SmartPointer.h $(icf_smart_pointer)
+	g++ -c traversalcommand/ConnectRandomlyCommand.cpp -std=c++11
+
 ListenDirectlyCommand.o: traversalcommand/ListenDirectlyCommand.cpp \
 					traversalcommand/ListenDirectlyCommand.h $(icf_listen_directly) \
 					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
@@ -309,10 +309,8 @@ ListenAndPunchCommand.o: traversalcommand/ListenAndPunchCommand.cpp \
 	
 ListenAndPunchRandomlyCommand.o: traversalcommand/ListenAndPunchCommand.cpp \
 					traversalcommand/ListenAndPunchCommand.h $(icf_listen_and_punch_some) \
-					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
-					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
-					$(sock_inc_dir)/ServerSocket.h $(icf_server_socket) \
 					socket/ReuseServerSocket.h $(icf_reuse_server_socket) \
+					socket/ReuseClientSocket.h $(icf_reuse_client_socket) \
 					include/SmartPointer.h $(icf_smart_pointer)
 	g++ -c traversalcommand/ListenAndPunchRandomlyCommand.cpp -std=c++11
 

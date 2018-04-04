@@ -90,6 +90,7 @@ ClientSocket* ListenAndPunchCommand::traverse(const TransmissionData &data, cons
             delete client;
         }else{
             ret = client;
+            ret->setNonBlock(false);
             punch_thread.join();
         }
 

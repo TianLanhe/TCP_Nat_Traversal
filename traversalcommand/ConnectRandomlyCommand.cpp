@@ -1,9 +1,18 @@
 #include "ConnectRandomlyCommand.h"
-#include "../include/socket/ClientSocket.h"
-#include "../include/socket/ReuseSocketFactory.h"
+#include "../socket/ReuseClientSocket.h"
+#include "../include/SmartPointer.h"
 
 #include <cstdlib>
-#include <unistd.h>
+#include <ctime>
+
+#include <sys/select.h>
+#include <errno.h>
+#include <sys/socket.h>
+
+extern int errno;
+
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 using namespace Lib;
@@ -29,7 +38,7 @@ int ConnectRandomlyCommand::_getRandomNum(int start,int length){
     else if(start > RAND_MAX)
         start = RAND_MAX;
 
-    if(RAND_MAX - start >= length)
+    if(RAND_MAX - start < length)
         length = RAND_MAX - start;
 
     return _nrand(length) + start;
@@ -49,21 +58,74 @@ ClientSocket* ConnectRandomlyCommand::traverse(const TransmissionData &data, con
     if(try_time < 2)
         return NULL;
 
-    ClientSocket *ret = ReuseSocketFactory::GetInstance()->GetClientSocket();
+    fd_set set;
+    FD_ZERO(&set);
+    int maxfd = -1;
+    int fd;
 
-    if(!ret->bind(ip,port)){
-        delete ret;
-        return NULL;
+    SmartPointer<ReuseClientSocket> sockets[try_time];
+    for(int i=0;i<try_time;++i){				// 创建 try_time 个 client socket 绑定相同的源端口，并将每个 socket 添加到 fd_set 中
+        sockets[i].reset(new ReuseClientSocket());
+
+        if(!sockets[i]->setNonBlock() || !sockets[i]->bind(ip,port))
+            return NULL;
+
+        fd = sockets[i]->_getfd();
+        FD_SET(fd,&set);
+        if(maxfd < fd)
+            maxfd = fd;
     }
 
-    usleep(500000);
+    sleep(CONNECT_SLEEP_TIME);
+
+    vector<port_type> ports;
+    port_type random_port;
+
+    srand(time(NULL));
 
     for(int count=0;count < try_time;++count){
-        if(ret->connect(destiny_ip,_getRandomNum(1024,64512),1)){
-            return ret;
+        do{
+            random_port = _getRandomNum(1024,64512);
+        }while(find(ports.begin(),ports.end(),random_port) != ports.end());
+        ports.push_back(random_port);
+
+        if(sockets[count]->connect(destiny_ip.c_str(),random_port,1)){	// 直接连接成功，不用后面的 select，直接返回该 socket
+            sockets[count]->setNonBlock(false);
+            int fd = sockets[count]->_getfd();
+            sockets[count]->_invalid();
+            return new ReuseClientSocket(fd);
+        }else if(errno != EINPROGRESS){					// 若 errno == EINPROGRESS ，表示正在后台进行连接，属于正常情况，会在后面 select 中处理
+            FD_CLR(sockets[count]->_getfd(),&set);		// 否则表示确定连接失败，将该 socket 从 fd_set 中删除，不用等它了
         }
     }
 
-    delete ret;
-    return NULL;
+    // 连接成功，套接字可写
+    // 连接失败，套接字可写且可读
+    // 通过判断可写集合，再进一步通过 getsockopt 取得错误码，若连接错误，错误码不为0,否则表示连接成功
+    struct timeval t = SELECT_WAIT_TIME;
+    int ret = select(maxfd+1,NULL,&set,NULL,&t);
+
+    if(ret == -1){
+        THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
+    }else if(ret == 0){
+        return NULL;
+    }else{
+        int error;
+        socklen_t len = sizeof(int);
+        for(int i=0;i<try_time;++i){
+            if(FD_ISSET(sockets[i].get()->_getfd(),&set)){
+                ::getsockopt(sockets[i].get()->_getfd(),SOL_SOCKET,SO_ERROR,&error,&len);
+
+                if(error == 0){
+                    sockets[i]->setNonBlock(false);			// 恢复阻塞属性
+
+                    int fd = sockets[i].get()->_getfd();
+                    sockets[i]->_invalid();
+
+                    return new ReuseClientSocket(fd);
+                }
+            }
+        }
+        return NULL;
+    }
 }
