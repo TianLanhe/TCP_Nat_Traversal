@@ -9,6 +9,7 @@ class ReuseServerSocket : public DefaultServerSocket {
 
 public:
 	ReuseServerSocket() { if (isOpen()) setReuse(); }
+    explicit ReuseServerSocket(int socket):DefaultServerSocket(socket) { if(isOpen()) setReuse(); }
 
 	virtual bool open() {
 		return DefaultServerSocket::open() && setReuse();

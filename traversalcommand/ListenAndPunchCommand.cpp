@@ -8,7 +8,6 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <thread>
-#include <unistd.h>
 
 using namespace std;
 using namespace Lib;
@@ -18,12 +17,12 @@ void ListenAndPunchCommand::punching(ListenAndPunchCommand *command, ClientSocke
     while(command->shouldPunch){
         if(!socket->isConnected()){
             socket->connect(destiny_ip,destiny_port,1);
-        }else{
+        }else{	// 如果发生同时打开，连接上了，这里关闭 server socket 的读通道，且将 shouldPunch 置为 false
             command->shouldPunch = false;
             shutdown(serverFd,SHUT_RD);
             break;
         }
-        sleep(1);
+        command->sleep(PUNCHING_INTEVAL);
     }
 }
 
@@ -47,7 +46,7 @@ ClientSocket* ListenAndPunchCommand::traverse(const TransmissionData &data, cons
         return NULL;
     }
 
-    if(!server->listen(1)){
+    if(!server->listen(LISTEN_NUMBER)){
         delete client;
         return NULL;
     }
@@ -58,11 +57,15 @@ ClientSocket* ListenAndPunchCommand::traverse(const TransmissionData &data, cons
         return NULL;
     }
 
-    struct timeval t = {5,0};
+    struct timeval t = SELECT_WAIT_TIME;
     fd_set set;
     FD_ZERO(&set);
     FD_SET(reuseSocket->_getfd(),&set);
 
+	// 这里可能发生一种很特殊的情况：TCP同时打开，即没有 server socket 进行监听，而是两个 socket 同时 connect，然后进入连接状态
+	// 这里是一个 server socket 进行监听，然后再次线程往目的地址不断 connect 打洞，有可能发生同时打开(亲测两个对称型NAT大概率会发生)用于
+	// 打洞的 socket 跟对方连接上了。这里的处理方法是在线程中判断 socket 的连接状态，如果连接成功了，则手动 shutdown 在监听的 server socket 以
+	// 唤醒被 select 阻塞的主线程。注意这里不能 close server socket 以唤醒 select
     thread punch_thread(ListenAndPunchCommand::punching,this,client,reuseSocket->_getfd(),data.getString(DESTINY_IP),data.getInt(DESTINY_PORT));
 
     int ret = select(reuseSocket->_getfd()+1,&set,NULL,NULL,&t);

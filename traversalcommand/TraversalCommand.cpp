@@ -6,6 +6,8 @@
 #include "ListenAndPunchRandomlyCommand.h"
 #include "ListenDirectlyCommand.h"
 
+#include <unistd.h>
+
 using namespace std;
 using namespace Lib;
 
@@ -23,6 +25,10 @@ using namespace Lib;
 #define ENDPOINT_INDEPENDENT nat_type::ENDPOINT_INDEPENDENT
 #define ADDRESS_DEPENDENT nat_type::ADDRESS_DEPENDENT
 #define ADDRESS_AND_PORT_DEPENDENT nat_type::ADDRESS_AND_PORT_DEPENDENT
+
+void TraversalCommand::sleep(double t){
+    usleep((int)(t*1000000));
+}
 
 bool isNatType(const nat_type& natType,const map_type& mapType,const filter_type& filterType){
     return natType.getMapType() == mapType && natType.getFilterType() == filterType;

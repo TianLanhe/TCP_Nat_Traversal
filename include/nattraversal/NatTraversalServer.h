@@ -20,7 +20,7 @@ class DefaultDataBase;
 
 #define SERVER_PORT 9999
 #define STUN_MAIN_PORT 6666
-#define STUN_BACKUP_PORT 8888
+#define STUN_SECONDARY_PORT 8888
 
 class UserRecord : public Object
 {

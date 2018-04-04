@@ -19,14 +19,14 @@ ClientSocket* ListenDirectlyCommand::traverse(const TransmissionData &data, cons
     if(!server->bind(ip,port))
         return NULL;
 
-    if(!server->listen(1))
+    if(!server->listen(LISTEN_NUMBER))
         return NULL;
 
     ReuseServerSocket *reuseSocket = dynamic_cast<ReuseServerSocket*>(server.get());
     if(reuseSocket == NULL)
         return NULL;
 
-    struct timeval t = {5,0};
+    struct timeval t = SELECT_WAIT_TIME;
     fd_set set;
     FD_ZERO(&set);
     FD_SET(reuseSocket->_getfd(),&set);

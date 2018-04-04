@@ -43,6 +43,7 @@ traversal_command_inc_dir = include/traversalcommand
 
 ########################################## base
 
+icf_log = 
 icf_semaphore = 
 icf_exception = 
 icf_nat_type = 
@@ -236,7 +237,8 @@ NatTraversalServer.o: nattraversal/NatTraversalServer.cpp \
 					socket/DefaultServerSocket.h $(icf_default_server_socket) \
 					nattraversal/NatTraversalCommon.h $(icf_nat_traversal_common) \
 					database/DefaultDataBase.h $(icf_default_database) \
-					$(traversal_command_inc_dir)//TraversalCommand.h $(icf_traversal_command)
+					$(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command) \
+					include/Log.h $(icf_log)
 	g++ -c nattraversal/NatTraversalServer.cpp -std=c++11
 
 NatCheckerClient.o: natchecker/NatCheckerClient.cpp \
@@ -255,7 +257,8 @@ NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
 		socket/DefaultServerSocket.h $(icf_default_server_socket) \
 		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
 		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
-		$(database_inc_dir)/DataBase.h $(icf_databse)
+		$(database_inc_dir)/DataBase.h $(icf_databse) \
+		include/Log.h $(icf_log)
 	g++ -c natchecker/NatCheckerServer.cpp -std=c++11
 	
 TraversalCommand.o: traversalcommand/TraversalCommand.cpp \

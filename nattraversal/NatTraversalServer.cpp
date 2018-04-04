@@ -7,6 +7,7 @@
 #include "../database/DefaultDataBase.h"
 #include "../include/traversalcommand/TraversalCommand.h"
 #include "NatTraversalCommon.h"
+#include "../include/Log.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,10 +17,13 @@
 #include <arpa/inet.h>
 
 #include <sys/select.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include <vector>
 #include <thread>
-#include <iostream>
+
+extern int errno;
 
 using namespace std;
 using namespace Lib;
@@ -50,16 +54,16 @@ vector<string> getLocalIps(){
             ret.push_back(string(inet_ntoa(sin->sin_addr)));
     }
 
+    ::close(s);
     return ret;
 }
 
 bool NatTraversalServer::init(){
     vector<string> ips = getLocalIps();
 
-    cout << "ip in this host:";
+    log("NatTraversalServer: ","ip in this host:");
     for(vector<string>::size_type i=0;i<ips.size();++i)
-        cout << " \"" << ips[i] << '\"';
-    cout << endl;
+        log(ips[i]);
 
     if(ips.size() < 2)
         return false;
@@ -79,9 +83,10 @@ bool NatTraversalServer::init(){
     m_database = new DefaultDataBase<DataRecord>();
     CHECK_NO_MEMORY_EXCEPTION(m_database);
 
+	// 将 NatTraversalServer 作为观察者添加到数据库中，当 NAT 数据库添加或删除一条记录时，会通知主服务器
     m_database->addObserver(this);
 
-    m_checker_server = new NatCheckerServer(m_main_ip,STUN_MAIN_PORT,m_scondary_ip,STUN_BACKUP_PORT);
+    m_checker_server = new NatCheckerServer(m_main_ip,STUN_MAIN_PORT,m_scondary_ip,STUN_SECONDARY_PORT);
     CHECK_NO_MEMORY_EXCEPTION(m_checker_server);
 
     if(!m_checker_server->setDataBase(m_database)){
@@ -111,11 +116,6 @@ void NatTraversalServer::term(){
         delete m_user_manager;
 }
 
-void NatTraversalServer::notify(void* msg){
-    string identifier((char*)msg);
-    m_semaphore[identifier].release();
-}
-
 void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
     if(socket == NULL)
         return;
@@ -126,9 +126,14 @@ void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
     if(!data.isMember(IDENTIFIER))
         return;
 
-    cout << "Client \"" << data[IDENTIFIER] << "\" login in" << endl;
+    log("NatTraversalServer: ","Client \"",data[IDENTIFIER],"\" login");
 
     m_user_manager->addRecord(UserRecord(data.getString(IDENTIFIER),socket));
+}
+
+void NatTraversalServer::notify(void* msg){
+    string identifier((char*)msg);
+    m_semaphore[identifier].release();
 }
 
 void NatTraversalServer::waitForDataBaseUpdate(const std::string& identifier){
@@ -155,7 +160,7 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
         delete socket;
         userManager->removeRecord(identifier);
 
-        cout << "Client \"" << identifier << "\" login out" << endl;
+        log("NatTraversalServer: ","Client \"",identifier,"\" logout");
     }
     else
     {
@@ -164,7 +169,10 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             bool isReady = data.getBool(READY_TO_CONNECT);
             userManager->getRecord(identifier).setReady(isReady);
 
-            cout << "Client \"" << identifier << "\" set ready to accept connecting" << endl;
+            if(isReady)
+                log("NatTraversalServer: ","Client \"",identifier,"\" set ready to accept connectin");
+            else
+                log("NatTraversalServer: ","Client \"",identifier,"\" set unready to accept connectin");
         }
         else if(data.isMember(PEER_HOST))	// 内容包括 PEER_HOST ，进行穿透操作
         {
@@ -179,15 +187,15 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             bool isReady = (*userManager)[identifier].isReady();
             if(isReady){
                 (*userManager)[identifier].setReady(false);
-                cout << "set Client \"" << identifier << "\" not ready" << endl;
+                log("NatTraversalServer: ","Client \"",identifier,"\" is set to be unready");
             }
 
-            cout << "Client \"" << identifier << "\" want to connect with Client \"" << data.getString(PEER_HOST) << "\"" << endl;
-
-            // 读取客户端发送过来的字段 PEER_HOST，判断准备连接的对等方是否已经登录以及是否允许连接
             string peer_identifier = data.getString(PEER_HOST);
+            log("NatTraversalServer: ","Client \"",identifier,"\" want to connect with Client \"",peer_identifier,"\"");
+
+            // 判断准备连接的对等方是否已经登录以及是否允许连接
             if(!userManager->hasRecord(peer_identifier) || !(*userManager)[peer_identifier].isReady()){
-                cout << "Client \"" << peer_identifier << "\" has logined out" << endl;
+                log("NatTraversalServer: ","Client \"",peer_identifier,"\" is not logged in");
                 goto r;
             }
 
@@ -199,22 +207,23 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
 
             if(!proxy.write(data))
                 goto r;
-            cout << "Client \"" << identifier << "\" start to checker NAT type" << endl;
+
+            log("NatTraversalServer: ","Waiting for Client \"",identifier,"\" to check the nat type");
 
 			// 向对等方发送 STUN 的地址，让其进行 NAT 类型检测(对等方已经随时监听着)
             data.remove(CAN_CONNECT);
             proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
             proxy.write(data);
-            cout << "Client \"" << peer_identifier << "\" start to checker NAT type" << endl;
+            log("NatTraversalServer: ","Waiting for Client \"",peer_identifier,"\" to check the nat type");
 
-			// Review: 这里会阻塞等待 NAT 类型检测完成，如果客户端和对等方发送问题，这里整个服务器会永远阻塞出不来
+			// Review: 这里会阻塞等待 NAT 类型检测完成，如果客户端和对等方发送出现问题，这里整个服务器会永远阻塞出不来
 			// 等待客户端 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(identifier);
-            cout << "Client \"" << identifier << "\" finish to checker NAT type" << endl;
+            log("NatTraversalServer: ","Client \"",identifier,"\" finish to checker NAT type");
 
 			// 等待对方等 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(peer_identifier);
-            cout << "Client \"" << peer_identifier << "\" finish to checker NAT type" << endl;
+            log("NatTraversalServer: ","Client \"",peer_identifier,"\" finish to checker NAT type");
 
 			// 两方 NAT 类型检测完成，从数据库中取出两方的外部地址与 NAT 类型信息
             records[0] = m_traversal_server->m_database->getRecord(identifier);
@@ -231,6 +240,8 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
 
 			// 根据 NAT 类型信息判断两方该采取什么操作
             types = GetTraversalType(natTypes[0],natTypes[1]);
+
+            log("NatTraversalServer: ","NAT type: ",types[0],' ',types[1]);
             
             // 这里判断了一下哪方是 Listen 的，给 Listen 的一方先发送数据，以使 Listen 的一方能在对方 Connect 之前准备好，Connect 客户端那边也会
             // 休眠一段时间(0.5s)以保证 Listen 一方准备好
@@ -250,13 +261,13 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             if(!proxy.write(data))
                 goto r;
 
-            cout << "send traversal command to Client \"" << identifiers[firstSend] << "\"" << endl;
+            log("NatTraversalServer: ","send traversal command to Client \"",identifiers[firstSend],"\"");
 
             data = GetTraversalData(types[1-firstSend],natTypes[firstSend],records[firstSend].getExtAddress().ip,records[firstSend].getExtAddress().port);
             proxy.setSocket(sockets[1-firstSend]);
             proxy.write(data);
 
-            cout << "send traversal command to Client \"" << identifiers[1-firstSend] << "\"" << endl;
+            log("NatTraversalServer: ","send traversal command to Client \"",identifiers[1-firstSend],"\"");
 
             return;
 r:
@@ -269,7 +280,7 @@ r:
         }
         else
         {
-            // TODO client send something can not recognize
+            log("NatTraversalServer: ","Client \"",identifier,"\" send something can not recognize");
         }
     }
 }
@@ -287,7 +298,7 @@ void NatTraversalServer::waitForClient(){
 
     fd_set set;
     int ret,maxfd;
-    while(1){                                   // Review : pay attention to the number of socket
+    while(1){
         FD_ZERO(&set);
 
         FD_SET(m_socket->_getfd(),&set);		// 把服务器 Socket 和所有接受到的客户端连接 Socket 都添加到 set 中
@@ -304,16 +315,21 @@ void NatTraversalServer::waitForClient(){
                 maxfd = fd;
         }
 
-		// 使用 select 进行 I/O 多路转接，避免为客户端开启太多线程
+        // 使用 select 进行 I/O 多路转接，避免为客户端开启太多线程。Review 缺点：必须等一批客户端处理完毕后才能循环下一次 select，万一阻塞就GG
         ret = select(maxfd+1,&set,NULL,NULL,NULL);
 
         if(ret == -1)
         {
-            THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
-        }else if(ret == 0)
+            if(errno == EINTR)
+                log("NatTraversalServer: ","Warning : NatTraversalServer is interrupted at function select in NatTraversalServer::waitForClient");
+            else
+                THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
+        }
+        else if(ret == 0)
         {
             THROW_EXCEPTION(ErrorStateException,"select timeout in NatTraversalServer::waitForClient");
-        }else
+        }
+        else
         {
         	// 如果服务器端可读，亦即有新客户端请求连接，则从连接中读取发送过来的标识符，保存用户的标识符、socket、以及 isReady 标志(默认为假)
             if(FD_ISSET(m_socket->_getfd(),&set))

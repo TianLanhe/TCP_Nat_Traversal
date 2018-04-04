@@ -44,8 +44,13 @@ int ListenAndPunchRandomlyCommand::_getRandomNum(int start,int length){
 void ListenAndPunchRandomlyCommand::punching(ListenAndPunchRandomlyCommand* command, vector<ClientSocket*> clients, int try_time, const ip_type &destiny_ip, port_type destiny_port)
 {
     while(command->shouldPunch){
-        for(int i=0;i<try_time;++i)
-            clients[i]->connect(destiny_ip,destiny_port,1);
+        for(int i=0;i<try_time;++i){
+            if(!clients[i]->isConnected()){
+                clients[i]->connect(destiny_ip,destiny_port,1);
+            }else{
+                // something strange happen
+            }
+        }
     }
 }
 

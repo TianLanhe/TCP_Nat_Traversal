@@ -2,8 +2,6 @@
 #include "../include/socket/ReuseSocketFactory.h"
 #include "../include/socket/ClientSocket.h"
 
-#include <unistd.h>
-
 using namespace Lib;
 
 ClientSocket* ConnectDirectlyCommand::traverse(const TransmissionData& data, const ip_type & ip, port_type port){
@@ -20,7 +18,7 @@ ClientSocket* ConnectDirectlyCommand::traverse(const TransmissionData& data, con
         return NULL;
     }
 
-    usleep(500000);
+    sleep(CONNECT_SLEEP_TIME);
 
     if(!ret->connect(data.getString(DESTINY_IP),data.getInt(DESTINY_PORT),1)){
         delete ret;

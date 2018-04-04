@@ -64,7 +64,7 @@ string DefaultSocket::read(int read_byte)
 	content[0] = '\0';
 
     size_t b = ::read(m_socket, content, read_byte);
-	content[b] = '\0';
+    content[(b >= 0 ? b : 0)] = '\0';
 
 	ret.append(content);
 

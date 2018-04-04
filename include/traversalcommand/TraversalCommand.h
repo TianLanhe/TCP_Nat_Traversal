@@ -20,6 +20,10 @@ LIB_BEGIN
 #define CONNECT_RANDOMLY_TRY_TIME 450
 #define CONNECT_AROUND_TRY_TIME 30
 
+#define CONNECT_SLEEP_TIME 0.5
+#define PUNCHING_INTEVAL 0.5
+#define SELECT_WAIT_TIME { 5,0 }
+#define LISTEN_NUMBER 1
 
 class ClientSocket;
 
@@ -42,6 +46,9 @@ public:
 
 public:
     virtual ClientSocket* traverse(const TransmissionData&, const ip_type&, port_type) = 0;
+
+protected:
+    void sleep(double);
 };
 
 TraversalCommand::Types GetTraversalType(const nat_type&, const nat_type&);

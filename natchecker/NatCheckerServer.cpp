@@ -6,12 +6,12 @@
 #include "../include/transmission/TransmissionData.h"
 #include "../include/transmission/TransmissionProxy.h"
 #include "../include/database/DataBase.h"
+#include "../include/Log.h"
 
 #include <sys/select.h>
 #include <errno.h>
 
 #include <thread>
-#include <iostream>
 #include <string>
 
 extern int errno;
@@ -82,20 +82,15 @@ void NatCheckerServer::handle_request(ClientSocket* client){
     addr.port = ext_port;
     record.setExtAddress(addr);
 
-    cout << "local_ip: " << local_ip << endl;   // TODO
-    cout << "local_port: " << local_port << endl;
+    log("NatCheckerServer: ","local_ip: ",local_ip);
+    log("NatCheckerServer: ","local_port: ",local_port);
 
-    cout << "ext_ip: " << ext_ip << endl;
-    cout << "ext_port: " << ext_port << endl;
+    log("NatCheckerServer: ","ext_ip: ",ext_ip);
+    log("NatCheckerServer: ","ext_port: ",ext_port);
 
-    if(local_ip == ext_ip && local_port != ext_port){    // 这是很奇怪的现象，IP 相同端口却改变了
-        cout << "Warning: local IP is equal to extern ip but local port it different from extern port." << endl;
-
-        cout << "local_ip: " << local_ip << endl;
-        cout << "local_port: " << local_port << endl;
-
-        cout << "extern_ip: " << ext_ip << endl;
-        cout << "extern_port: " << ext_port << endl;
+    // 这是很奇怪的现象，IP 相同端口却改变了
+    if(local_ip == ext_ip && local_port != ext_port){
+        log("NatCheckerServer: ","Warning: local IP is equal to extern IP but local port is different from extern port.");
     }
 
     if(local_ip == ext_ip && local_port == ext_port)	// 内外地址相同，处于公网中，停止检测
@@ -122,6 +117,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
         filter_type filterType;
         if(canConnect)
         {
+            log("NatCheckerServer: ","filterType: ENDPOINT_INDEPENDENT");
             filterType = nat_type::ENDPOINT_INDEPENDENT;
         }
         else
@@ -134,10 +130,13 @@ void NatCheckerServer::handle_request(ClientSocket* client){
 
             canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
 
-            if(canConnect)
+            if(canConnect){
                 filterType = nat_type::ADDRESS_DEPENDENT;
-            else
+                log("NatCheckerServer: ","filterType: ADDRESS_DEPENDENT");
+            }else{
                 filterType = nat_type::ADDRESS_AND_PORT_DEPENDENT;
+                log("NatCheckerServer: ","filterType: ADDRESS_AND_PORT_DEPENDENT");
+            }
         }
 
         delete c;
@@ -175,20 +174,13 @@ void NatCheckerServer::handle_request(ClientSocket* client){
 
         string ext_ip2 = c->getPeerAddr();
         port_type ext_port2 = c->getPeerPort();
-        
-        // TODO
-   	 	cout << "ext_ip2: " << ext_ip2 << endl;
-    	cout << "ext_port2: " << ext_port2 << endl;
 
-        if(ext_ip2 != ext_ip){  // 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
-            cout << "Warning: The NAT allocate the different global IP to the same host." << endl;
+        log("NatCheckerServer: ","ext_ip2: ",ext_ip2);
+        log("NatCheckerServer: ","ext_port2: ",ext_port2);
 
-            cout << "extern_ip: " << ext_ip << endl;
-            cout << "extern_port: " << ext_port << endl;
-
-            cout << "extern_ip2: " << ext_ip2 << endl;
-            cout << "extern_port2: " << ext_port2 << endl;
-        }
+        // 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
+        if(ext_ip2 != ext_ip)
+            log("NatCheckerServer: ","Warning: The NAT allocate the different global IP to the same host");
 
         if(ext_ip2 == ext_ip && ext_port2 == ext_port) // 第2次的外网地址与第1次的相同
         {
@@ -227,19 +219,13 @@ void NatCheckerServer::handle_request(ClientSocket* client){
 
             string ext_ip3 = c->getPeerAddr();
             port_type ext_port3 = c->getPeerPort();
-        
-   	 		cout << "ext_ip3: " << ext_ip3 << endl;
-    		cout << "ext_port3: " << ext_port3 << endl;
 
-            if(ext_ip2 != ext_ip3){ // 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
-                cout << "Warning: The NAT allocate the different global IP to the same host." << endl;
+            log("NatCheckerServer: ","ext_ip3: ",ext_ip3);
+            log("NatCheckerServer: ","ext_port3: ",ext_port3);
 
-                cout << "extern_ip2: " << ext_ip2 << endl;
-                cout << "extern_port2: " << ext_port2 << endl;
-
-                cout << "extern_ip3: " << ext_ip3 << endl;
-                cout << "extern_port3: " << ext_port3 << endl;
-            }
+            // 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
+            if(ext_ip2 != ext_ip3)
+                log("NatCheckerServer: ", "Warning: The NAT allocate the different global IP to the same host");
 
             if(ext_ip3 == ext_ip2 && ext_port3 == ext_port2) // 第3次的外网地址与第2次的相同
             {
@@ -290,8 +276,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                     ext_ip_n = c->getPeerAddr();
                     ext_port_n = c->getPeerPort();
 
-                    cout << "ext_ip_n: " << ext_ip_n << endl;
-                    cout << "ext_port_n: " << ext_port_n << endl;
+                    log("NatCheckerServer: ","ext_ip_n: ",ext_ip_n);
+                    log("NatCheckerServer: ","ext_port_n: ",ext_port_n);
 
                     delta_pre = delta_cur;
                     delta_cur = ext_port_n - ext_port_pre;
@@ -341,7 +327,7 @@ void NatCheckerServer::waitForClient(){
     CHECK_STATE_EXCEPTION(m_socket);
 
     fd_set set;
-    int ret,maxfd;
+    int ret,maxfd,fd;
     while(1)
     {
         FD_ZERO(&set);
@@ -349,7 +335,6 @@ void NatCheckerServer::waitForClient(){
         FD_SET(m_socket->_getfd(),&set);		// 把服务器 Socket 和所有接受到的客户端连接 Socket 都添加到 set 中
         maxfd = m_socket->_getfd();
 
-        int fd;
         for(vector<DefaultClientSocket*>::size_type i=0;i<m_clientVec.size();++i){
             fd = m_clientVec[i]->_getfd();
 
@@ -364,9 +349,9 @@ void NatCheckerServer::waitForClient(){
         if(ret == -1)
         {
             if(errno == EINTR)
-                cout << "Warning : NatCheckerServer is interrupted at function select in NatCheckerServer::waitForClient" << endl;
+                log("NatCheckerServer: ","Warning : NatCheckerServer is interrupted at function select in NatCheckerServer::waitForClient");
             else
-                THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
+                THROW_EXCEPTION(ErrorStateException,"select error in NatCheckerServer::waitForClient");
         }else if(ret == 0)
         {
             THROW_EXCEPTION(ErrorStateException,"select timeout in NatTraversalServer::waitForClient");
@@ -376,6 +361,8 @@ void NatCheckerServer::waitForClient(){
             if(FD_ISSET(m_socket->_getfd(),&set))
             {
                 ClientSocket *client = m_socket->accept();
+
+                log("NatCheckerServer: Client \"",client->getPeerAddr(),':',client->getPeerPort(),"\" connect");
 
                 DefaultClientSocket *defaultSocket = dynamic_cast<DefaultClientSocket*>(client);
                 CHECK_STATE_EXCEPTION(defaultSocket);
@@ -388,13 +375,14 @@ void NatCheckerServer::waitForClient(){
             }
 
             // 遍历存储的客户端 socket 判断是否可读，若可读客户端断开连接
-            for(vector<DefaultClientSocket*>::iterator it = m_clientVec.begin(); it != m_clientVec.end() && ret != 0;){
+            vector<DefaultClientSocket*>::iterator it = m_clientVec.begin();
+            while(it != m_clientVec.end() && ret != 0){
                 if(FD_ISSET((*it)->_getfd(),&set))
                 {
                     string content = (*it)->read();
                     CHECK_STATE_EXCEPTION(content.empty());
 
-                    cout << "NatChecker: Client \"" << (*it)->getPeerAddr() << ':' << (*it)->getPeerPort() << "\" close" << endl;
+                    log("NatCheckerServer: Client \"",(*it)->getPeerAddr(),':',(*it)->getPeerPort(),"\" disconnect");
 
                     delete (*it);
 
