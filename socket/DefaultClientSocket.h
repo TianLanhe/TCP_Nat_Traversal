@@ -40,6 +40,7 @@ public:
 
 public:
     int _getfd(){ return m_socket._socket(); }		// 提供给 NatTraversalClient 的特殊函数
+    void _invaild(){ m_socket.invalid(); }
 
 protected:
 

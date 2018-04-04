@@ -17,7 +17,8 @@ LIB_BEGIN
 
 #define TYPE "type"
 
-#define TRY_TIME_CONSTANT 450
+#define CONNECT_RANDOMLY_TRY_TIME 450
+#define CONNECT_AROUND_TRY_TIME 30
 
 
 class ClientSocket;

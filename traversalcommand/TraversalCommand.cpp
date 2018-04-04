@@ -196,13 +196,13 @@ TransmissionData Lib::GetTraversalData(const TraversalCommand::TraversalType& ty
     case CONNECT_AROUND:
         ret.add(DESTINY_IP,ip);
         ret.add(DESTINY_PORT,port);
-        ret.add(TRY_TIME,TRY_TIME_CONSTANT);
+        ret.add(TRY_TIME,CONNECT_AROUND_TRY_TIME);
         ret.add(INCREMENT,natType.getPortDelta());
         break;
     case CONNECT_RANDOMLY:
         ret.add(DESTINY_IP,ip);
         //ret.add(DESTINY_PORT,port);
-        ret.add(TRY_TIME,TRY_TIME_CONSTANT);
+        ret.add(TRY_TIME,CONNECT_RANDOMLY_TRY_TIME);
         //ret.add(INCREMENT,0);
         break;
     case LISTEN_DIRECTLY:
@@ -214,7 +214,7 @@ TransmissionData Lib::GetTraversalData(const TraversalCommand::TraversalType& ty
     case LISTEN_BY_PUNCHING_SOME_HOLE:
         ret.add(DESTINY_IP,ip);
         ret.add(DESTINY_PORT,port);
-        ret.add(TRY_TIME,TRY_TIME_CONSTANT);
+        ret.add(TRY_TIME,CONNECT_RANDOMLY_TRY_TIME);
         break;
     }
 

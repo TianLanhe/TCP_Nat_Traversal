@@ -276,10 +276,10 @@ ConnectDirectlyCommand.o: traversalcommand/ConnectDirectlyCommand.cpp \
 
 ConnectAroundCommand.o: traversalcommand/ConnectAroundCommand.cpp \
 					traversalcommand/ConnectAroundCommand.h $(icf_connect_around) \
-					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
-					$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
-	g++ -c traversalcommand/ConnectAroundCommand.cpp
-	
+					socket/ReuseClientSocket.h $(icf_reuse_client_socket) \
+					include/SmartPointer.h $(icf_smart_pointer)
+	g++ -c traversalcommand/ConnectAroundCommand.cpp -std=c++11
+
 ConnectRandomlyCommand.o: traversalcommand/ConnectRandomlyCommand.cpp \
 					traversalcommand/ConnectRandomlyCommand.h $(icf_connect_randomly) \
 					$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
