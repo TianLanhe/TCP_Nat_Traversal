@@ -64,7 +64,7 @@ bool NatTraversalServer::init(){
     string content;
     for(vector<string>::size_type i=0;i<ips.size();++i)
         content.append('\"' + ips[i] + "\" ");
-    log("NatTraversalServer: ","ip in this host: ",content);
+    log("NatTraversalServer: ","Local IP: ",content);
 
     if(ips.size() < 2)
         return false;
@@ -124,10 +124,12 @@ void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
     TransmissionProxy proxy(socket);
     TransmissionData data = proxy.read();
 
-    if(!data.isMember(IDENTIFIER))
+    if(!data.isMember(IDENTIFIER)){
+    	delete socket;
         return;
+    }
 
-    log("NatTraversalServer: ","Client \"",data[IDENTIFIER],"\" login");
+    log("NatTraversalServer: ","Client \"",data[IDENTIFIER],"\" login (IP: ",socket->getPeerAddr(),")");
 
     m_user_manager->addRecord(UserRecord(data.getString(IDENTIFIER),socket));
 }
@@ -137,7 +139,14 @@ void NatTraversalServer::notify(void* msg){
     m_semaphore[identifier].release();
 }
 
+void NatTraversalServer::timer(NatTraversalServer *m_traversal_server,const string& identifier){
+    sleep(TIME_TO_WAIT_FOR_CHECKING_NAT_TYPE);
+
+    m_traversal_server->m_semaphore[identifier].release();
+}
+
 void NatTraversalServer::waitForDataBaseUpdate(const std::string& identifier){
+    //thread t(timer,this,identifier);
     m_semaphore[identifier].request();
 }
 
@@ -171,9 +180,9 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             userManager->getRecord(identifier).setReady(isReady);
 
             if(isReady)
-                log("NatTraversalServer: ","Client \"",identifier,"\" set ready to accept connectin");
+                log("NatTraversalServer: ","Client \"",identifier,"\" set ready to accept connecting");
             else
-                log("NatTraversalServer: ","Client \"",identifier,"\" set unready to accept connectin");
+                log("NatTraversalServer: ","Client \"",identifier,"\" set unready to accept connecting");
         }
         else if(data.isMember(PEER_HOST))	// 内容包括 PEER_HOST ，进行穿透操作
         {
@@ -209,22 +218,22 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             if(!proxy.write(data))
                 goto r;
 
-            log("NatTraversalServer: ","Waiting for Client \"",identifier,"\" to check the nat type");
+            log("NatTraversalServer: ","Waiting for Client \"",identifier,"\" to detect the nat type");
 
 			// 向对等方发送 STUN 的地址，让其进行 NAT 类型检测(对等方已经随时监听着)
             data.remove(CAN_CONNECT);
             proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
             proxy.write(data);
-            log("NatTraversalServer: ","Waiting for Client \"",peer_identifier,"\" to check the nat type");
+            log("NatTraversalServer: ","Waiting for Client \"",peer_identifier,"\" to detect the nat type");
 
 			// Review: 这里会阻塞等待 NAT 类型检测完成，如果客户端和对等方发送出现问题，这里整个服务器会永远阻塞出不来
 			// 等待客户端 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(identifier);
-            log("NatTraversalServer: ","Client \"",identifier,"\" finish to checker NAT type");
+            log("NatTraversalServer: ","Client \"",identifier,"\" finish NAT type detection");
 
 			// 等待对方等 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(peer_identifier);
-            log("NatTraversalServer: ","Client \"",peer_identifier,"\" finish to checker NAT type");
+            log("NatTraversalServer: ","Client \"",peer_identifier,"\" finish NAT type detection");
 
 			// 两方 NAT 类型检测完成，从数据库中取出两方的外部地址与 NAT 类型信息
             records[0] = m_traversal_server->m_database->getRecord(identifier);
@@ -242,7 +251,10 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
 			// 根据 NAT 类型信息判断两方该采取什么操作
             types = GetTraversalType(natTypes[0],natTypes[1]);
 
-            log("NatTraversalServer: ","NAT type: ",types[0],' ',types[1]);
+            static const char* typeStr[]={"","connect directly","connect nearby","connect randomly",
+                                          "listen directly","listen and punch a hole","listen and punch some hole"};
+
+            log("NatTraversalServer: ",identifiers[0],": ",typeStr[types[0]],", ",identifiers[1],": ",typeStr[types[1]]);
             
             // 这里判断了一下哪方是 Listen 的，给 Listen 的一方先发送数据，以使 Listen 的一方能在对方 Connect 之前准备好，Connect 客户端那边也会
             // 休眠一段时间(0.5s)以保证 Listen 一方准备好

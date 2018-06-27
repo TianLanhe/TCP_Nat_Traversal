@@ -117,11 +117,13 @@ void NatCheckerServer::handle_request(ClientSocket* client){
         filter_type filterType;
         if(canConnect)
         {
+            log("NatCheckerServer: ",m_another_addr,":",m_main_port," connect to ",ext_ip,":",ext_port," successfully");
             log("NatCheckerServer: ","filterType: ENDPOINT_INDEPENDENT");
             filterType = nat_type::ENDPOINT_INDEPENDENT;
         }
         else
         {
+            log("NatCheckerServer: ",m_another_addr,":",m_main_port," fail to connect to ",ext_ip,":",ext_port);
         	// 若无法连接上，则关闭原来的 Client Socket，重新打开一个，绑定地址为 IP1:Port2，并尝试连接
             if(!(c->reopen() && c->bind(m_main_addr,m_another_port))){
                 delete c;
@@ -131,9 +133,11 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
 
             if(canConnect){
+                log("NatCheckerServer: ",m_main_addr,":",m_another_port," connect to ",ext_ip,":",ext_port," successfully");
                 filterType = nat_type::ADDRESS_DEPENDENT;
                 log("NatCheckerServer: ","filterType: ADDRESS_DEPENDENT");
             }else{
+                log("NatCheckerServer: ",m_main_addr,":",m_another_port," fail to connect to ",ext_ip,":",ext_port);
                 filterType = nat_type::ADDRESS_AND_PORT_DEPENDENT;
                 log("NatCheckerServer: ","filterType: ADDRESS_AND_PORT_DEPENDENT");
             }
@@ -198,6 +202,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             nat_type natType(true,nat_type::ENDPOINT_INDEPENDENT,filterType);
             natType.setPrediction();
             record.setNatType(natType);
+
+            log("NatCheckerServer: ","mapType: ENDPOINT_INDEPENDENT");
         }
         else	// 第2次的外网地址与第1次的不同，需要进一步判断是 Address Dependent 还是 Address And Port Dependent
         {
@@ -245,6 +251,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 record.setNatType(natType);
                 // 第2次的外网与第1次的不同，第3次与第2次的相同，表示是地址相关的 Map 类型，记得更新 DataRecord 的外部地址，以最新的为准
                 record.setExtAddress(Address(ext_ip2,ext_port2 - ext_port + ext_port2));
+
+                log("NatCheckerServer: ","mapType: ADDRESS_DEPENDENT");
             }
             else // 第3次与第2次的端口不同，表示时 Address And Port Dependent
             {
@@ -295,6 +303,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 c = NULL;
 
                 nat_type natType(true,nat_type::ADDRESS_AND_PORT_DEPENDENT,filterType);
+                log("NatCheckerServer: ","mapType: ADDRESS_AND_PORT_DEPENDENT");
                 if( try_time == _getMaxTryTime() ){ // 端口随机变化
                     natType.setPrediction(false);
                 }else{  // 设置增量为 delta_cur;

@@ -22,6 +22,8 @@ class DefaultDataBase;
 #define STUN_MAIN_PORT 6666
 #define STUN_SECONDARY_PORT 8888
 
+#define TIME_TO_WAIT_FOR_CHECKING_NAT_TYPE 3
+
 class UserRecord : public Object
 {
 public:
@@ -64,6 +66,8 @@ private:
     void getAndStoreIdentifier(DefaultClientSocket*);
 
     static void handle_connect_request(NatTraversalServer*,const std::string&,DefaultClientSocket*);
+
+    static void timer(NatTraversalServer*,const std::string&);
 
     void waitForDataBaseUpdate(const std::string&);
 
