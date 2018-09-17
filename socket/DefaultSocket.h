@@ -26,6 +26,9 @@ public:
 	std::string read(int);
 	size_t write(const char*);
 
+    size_t read(char*,int);
+    size_t write(const char*,size_t);
+
 	port_type getPort() const { return m_port; }
     ip_type getAddr() const { return m_addr; }
 

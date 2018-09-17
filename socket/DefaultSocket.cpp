@@ -55,6 +55,7 @@ bool DefaultSocket::close()
 
 string DefaultSocket::read(int read_byte)
 {
+    CHECK_PARAMETER_EXCEPTION(read_byte > 0);
 	CHECK_OPERATION_EXCEPTION(isOpen());
 
 	string ret;
@@ -68,25 +69,46 @@ string DefaultSocket::read(int read_byte)
 
 	ret.append(content);
 
+    free(content);
+
 	return ret;
 }
 
 size_t DefaultSocket::write(const char* content)
 {
-	CHECK_OPERATION_EXCEPTION(isOpen() && content);
+    CHECK_PARAMETER_EXCEPTION(content);
+    CHECK_OPERATION_EXCEPTION(isOpen());
 
     int write_byte = ::write(m_socket, content, strlen(content));
 
     return write_byte;
 }
 
-void DefaultSocket::invalid() {
+size_t DefaultSocket::read(char *buffer, int read_byte)
+{
+    CHECK_PARAMETER_EXCEPTION(buffer && read_byte > 0);
+    CHECK_OPERATION_EXCEPTION(isOpen());
+
+    return ::read(m_socket,buffer,read_byte);
+}
+
+size_t DefaultSocket::write(const char * buffer, size_t size)
+{
+    CHECK_PARAMETER_EXCEPTION(buffer && size > 0);
+    CHECK_OPERATION_EXCEPTION(isOpen());
+
+    return ::write(m_socket,buffer,size);
+}
+
+void DefaultSocket::invalid()
+{
 	m_socket = -1;
 	m_port = -1;
 	m_addr = "";
 }
 
-bool DefaultSocket::bind(const ip_type& addr, port_type port) {
+bool DefaultSocket::bind(const ip_type& addr, port_type port)
+{
 	CHECK_OPERATION_EXCEPTION(isOpen() && !isBound());
 
 	struct sockaddr_in cli_addr;
@@ -107,7 +129,8 @@ bool DefaultSocket::bind(const ip_type& addr, port_type port) {
 	return true;
 }
 
-void DefaultSocket::updateAddrAndPort() {
+void DefaultSocket::updateAddrAndPort()
+{
 	struct sockaddr_in cli_addr;
 	socklen_t len = sizeof(cli_addr);
     getsockname(m_socket, (struct sockaddr*)&cli_addr, &len);

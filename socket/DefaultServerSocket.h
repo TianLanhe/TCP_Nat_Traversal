@@ -24,6 +24,10 @@ public:
 	virtual std::string read(int read_bype = DEFAULT_READ_BYTE);		// 默认读取 512 个字节
 	virtual size_t write(const char*);
 
+    // buffer
+    virtual size_t read(char*,int);
+    virtual size_t write(const char*,size_t);
+
 	virtual bool listen(int);
 	virtual bool isListen() const { return m_bIsListen; }
 

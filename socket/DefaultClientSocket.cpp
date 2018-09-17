@@ -73,6 +73,7 @@ bool DefaultClientSocket::setNonBlock(bool flag){
 
 string DefaultClientSocket::read(int read_byte)
 {
+    CHECK_PARAMETER_EXCEPTION(read_byte > 0);
 	CHECK_OPERATION_EXCEPTION(m_bHasConnect);
 
 	return m_socket.read(read_byte);
@@ -80,9 +81,26 @@ string DefaultClientSocket::read(int read_byte)
 
 size_t DefaultClientSocket::write(const char* content)
 {
+    CHECK_PARAMETER_EXCEPTION(content);
 	CHECK_OPERATION_EXCEPTION(m_bHasConnect);
 
 	return m_socket.write(content);
+}
+
+size_t DefaultClientSocket::read(char* buffer,int read_byte)
+{
+    CHECK_PARAMETER_EXCEPTION(buffer && read_byte > 0);
+    CHECK_OPERATION_EXCEPTION(m_bHasConnect);
+
+    return m_socket.read(buffer,read_byte);
+}
+
+size_t DefaultClientSocket::write(const char* buffer,size_t size)
+{
+    CHECK_PARAMETER_EXCEPTION(buffer && size > 0);
+    CHECK_OPERATION_EXCEPTION(m_bHasConnect);
+
+    return m_socket.write(buffer,size);
 }
 
 typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() const {

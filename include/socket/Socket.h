@@ -30,7 +30,11 @@ public:
 
 	virtual std::string read(int) = 0;
     virtual size_t write(const std::string& str) { return write(str.c_str()); }
-    virtual size_t write(const char*) = 0;                  // Review: 这样设计没办法把'\0'发送出去
+    virtual size_t write(const char*) = 0;
+
+    // buffer
+    virtual size_t read(char*,int) = 0;
+    virtual size_t write(const char*,size_t) = 0;
 
 	virtual port_type getPort() const = 0;
     virtual ip_type getAddr() const = 0;

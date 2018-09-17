@@ -28,6 +28,7 @@ bool DefaultServerSocket::close()
 
 string DefaultServerSocket::read(int read_byte)
 {
+    CHECK_PARAMETER_EXCEPTION(read_byte > 0);
 	CHECK_OPERATION_EXCEPTION(m_bIsListen);
 
 	return m_socket.read(read_byte);
@@ -35,9 +36,26 @@ string DefaultServerSocket::read(int read_byte)
 
 size_t DefaultServerSocket::write(const char* content)
 {
+    CHECK_PARAMETER_EXCEPTION(content);
 	CHECK_OPERATION_EXCEPTION(m_bIsListen);
 
 	return m_socket.write(content);;
+}
+
+size_t DefaultServerSocket::read(char* buffer, int read_byte)
+{
+    CHECK_PARAMETER_EXCEPTION(buffer && read_byte > 0);
+    CHECK_OPERATION_EXCEPTION(m_bIsListen);
+
+    return m_socket.read(buffer,read_byte);
+}
+
+size_t DefaultServerSocket::write(const char* buffer, size_t size)
+{
+    CHECK_PARAMETER_EXCEPTION(buffer && size > 0);
+    CHECK_OPERATION_EXCEPTION(m_bIsListen);
+
+    return m_socket.write(buffer,size);
 }
 
 bool DefaultServerSocket::listen(int num)
