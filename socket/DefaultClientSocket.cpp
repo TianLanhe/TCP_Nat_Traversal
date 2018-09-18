@@ -67,6 +67,11 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t time)
 
 bool DefaultClientSocket::setNonBlock(bool flag){
     int f = fcntl(m_socket._socket(),F_GETFL,0);
+
+    if(f < 0){
+        return false;
+    }
+
     f = ( flag ? f | O_NONBLOCK : f & ~O_NONBLOCK);
     return fcntl(m_socket._socket(),F_SETFL,f) == 0;
 }

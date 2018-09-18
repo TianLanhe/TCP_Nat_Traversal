@@ -2,10 +2,11 @@
 #define TRANSMISSION_PROXY_H
 
 #include "../Object.h"
-#include "../socket/ClientSocket.h"
-#include "TransmissionData.h"
 
 LIB_BEGIN
+
+class ClientSocket;
+class TransmissionData;
 
 class TransmissionProxy : public Object
 {

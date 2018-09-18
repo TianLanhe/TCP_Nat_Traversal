@@ -5,6 +5,7 @@
 #include "../include/natchecker/NatCheckerClient.h"
 #include "../socket/DefaultClientSocket.h"
 #include "../include/traversalcommand/TraversalCommand.h"
+#include "../include/Utility.h"
 #include "NatTraversalCommon.h"
 
 #include <sys/select.h>
@@ -73,11 +74,19 @@ bool NatTraversalClient::setReadyToAccept(bool ready){
     return true;
 }
 
+ClientSocket::port_type NatTraversalClient::_genClientPort(){
+    int ret = Lib::Util::getRandomNumByRange(1024,65536);
+    return ret;
+}
+
 ClientSocket* NatTraversalClient::_checkNatTypeAndConnect(const ip_type& stun_ip, port_type stun_port){
     ClientSocket *ret = NULL;
 
+    // 18/09/18:每次生成新的端口进行连接，灵活性更大，也便于单机调试
+    port_type port = _genClientPort();
+
     // 进行 NAT 类型检测
-    NatCheckerClient client(m_identifier,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
+    NatCheckerClient client(m_identifier,m_socket->getAddr(),port);
     if(!client.connect(stun_ip,stun_port))
         return ret;
 
@@ -94,7 +103,7 @@ ClientSocket* NatTraversalClient::_checkNatTypeAndConnect(const ip_type& stun_ip
         return ret;
 
 	// 进行穿越操作，返回连接的 socket
-    ret = command->traverse(data,m_socket->getAddr(),CLIENT_DEFAULT_PORT);
+    ret = command->traverse(data,m_socket->getAddr(),port);
 
     delete command;
 

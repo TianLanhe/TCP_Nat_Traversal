@@ -49,6 +49,7 @@ icf_exception =
 icf_nat_type = 
 icf_object = include/Exception.h $(icf_exception)
 icf_smart_pointer = include/Exception.h $(icf_exception)
+icf_utility =
 
 ########################################## socket
 
@@ -89,9 +90,7 @@ icf_writer = json/writer.h $(icf_writer_actually)
 ########################################### transmission
 
 icf_trans_data = include/Object.h $(icf_object)
-icf_trans_proxy = include/Object.h $(icf_object) \
-		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
-		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data)
+icf_trans_proxy = include/Object.h $(icf_object)
 		
 ########################################### nat_checker
 
@@ -141,8 +140,8 @@ all: client server
 test: mytest.o $(trans_obj) $(reuse_sock_obj) $(client_obj) Exception.o
 	g++ -o mytest mytest.o $(trans_obj) $(reuse_sock_obj) $(client_obj) Exception.o -lpthread
 
-client: client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o
-	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o -lpthread
+client: client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o
+	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o -lpthread
 	
 server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o
 	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o -lpthread
@@ -167,7 +166,9 @@ TransmissionData.o: $(trans_inc_dir)/TransmissionData.h $(icf_trans_data) transm
 	g++ -c transmission/TransmissionData.cpp
 
 TransmissionProxy.o: transmission/TransmissionProxy.cpp $(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
-		$(json_inc_dir)/json.h $(icf_json)
+		$(json_inc_dir)/json.h $(icf_json) \
+		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data)
 	g++ -c transmission/TransmissionProxy.cpp
 
 json_reader.o: json/json_reader.cpp json/reader.h $(icf_reader_actually) json/value.h $(icf_value)
@@ -213,6 +214,10 @@ Exception.o: include/Exception.h source/Exception.cpp
 	
 Semaphore.o: source/Semaphore.cpp include/Semaphore.h
 	g++ -c source/Semaphore.cpp
+
+Utility.o: source/Utility.cpp include/Utility.h \
+			include/Exception.h $(icf_exception)
+	g++ -c source/Utility.cpp
 	
 DefaultSocket.o: socket/DefaultSocket.h socket/DefaultSocket.cpp $(icf_default_socket)
 	g++ -c socket/DefaultSocket.cpp
@@ -225,7 +230,8 @@ NatTraversalClient.o: nattraversal/NatTraversalClient.cpp \
 					$(nat_checker_inc_dir)/NatCheckerClient.h $(icf_nat_checker_client) \
 					socket/DefaultClientSocket.h $(icf_default_client_socket) \
 					nattraversal/NatTraversalCommon.h $(icf_nat_traversal_common) \
-					$(traversal_command_inc_dir)//TraversalCommand.h $(icf_traversal_command)
+					$(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command) \
+					include/Utility.h $(icf_utility)
 	g++ -c nattraversal/NatTraversalClient.cpp -std=c++11
 
 NatTraversalServer.o: nattraversal/NatTraversalServer.cpp \

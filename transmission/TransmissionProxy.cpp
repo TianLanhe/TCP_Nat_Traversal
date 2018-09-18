@@ -1,5 +1,7 @@
 #include "../include/transmission/TransmissionProxy.h"
 #include "../include/json/json.h"
+#include "../include/socket/ClientSocket.h"
+#include "../include/transmission/TransmissionData.h"
 
 #include <string>
 #include <cstring>
