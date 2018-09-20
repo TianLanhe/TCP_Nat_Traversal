@@ -245,7 +245,7 @@ NatTraversalServer.o: nattraversal/NatTraversalServer.cpp \
 					database/DefaultDataBase.h $(icf_default_database) \
 					$(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command) \
 					include/Log.h $(icf_log)
-	g++ -c nattraversal/NatTraversalServer.cpp -std=c++11
+	g++ -c nattraversal/NatTraversalServer.cpp -std=c++11 -I. -Iinclude/
 
 NatCheckerClient.o: natchecker/NatCheckerClient.cpp \
 		$(nat_checker_inc_dir)/NatCheckerClient.h $(icf_nat_checker_client) \

@@ -24,7 +24,8 @@ typedef nat_type::map_type map_type;
 
 NatCheckerServer::NatCheckerServer(const ip_type& main_addr, port_type main_port, const ip_type& another_addr, port_type another_port)
     :m_main_addr(main_addr),m_main_port(main_port),
-      m_another_addr(another_addr),m_another_port(another_port){
+      m_another_addr(another_addr),m_another_port(another_port),
+      m_database(NULL){
     m_main_server = ReuseSocketFactory::GetInstance()->GetServerSocket();
 }
 

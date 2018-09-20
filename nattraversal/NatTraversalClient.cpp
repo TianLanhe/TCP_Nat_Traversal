@@ -75,8 +75,7 @@ bool NatTraversalClient::setReadyToAccept(bool ready){
 }
 
 ClientSocket::port_type NatTraversalClient::_genClientPort(){
-    int ret = Lib::Util::getRandomNumByRange(1024,65536);
-    return ret;
+    return Lib::Util::getRandomNumByRange(1024,65536);
 }
 
 ClientSocket* NatTraversalClient::_checkNatTypeAndConnect(const ip_type& stun_ip, port_type stun_port){
