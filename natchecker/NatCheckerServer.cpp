@@ -83,15 +83,15 @@ void NatCheckerServer::handle_request(ClientSocket* client){
     addr.port = ext_port;
     record.setExtAddress(addr);
 
-    log("NatCheckerServer: ","local_ip: ",local_ip);
-    log("NatCheckerServer: ","local_port: ",local_port);
+    Log(INFO) << "local_ip: " << local_ip << eol;
+    Log(INFO) << "local_port: " << local_port << eol;
 
-    log("NatCheckerServer: ","ext_ip: ",ext_ip);
-    log("NatCheckerServer: ","ext_port: ",ext_port);
+    Log(INFO) << "ext_ip: " << ext_ip << eol;
+    Log(INFO) << "ext_port: " << ext_port << eol;
 
     // 这是很奇怪的现象，IP 相同端口却改变了
     if(local_ip == ext_ip && local_port != ext_port){
-        log("NatCheckerServer: ","Warning: local IP is equal to extern IP but local port is different from extern port.");
+        Log(WARN) << "local IP is equal to extern IP but local port is different from extern port." << eol;
     }
 
     if(local_ip == ext_ip && local_port == ext_port)	// 内外地址相同，处于公网中，停止检测
@@ -118,13 +118,13 @@ void NatCheckerServer::handle_request(ClientSocket* client){
         filter_type filterType;
         if(canConnect)
         {
-            log("NatCheckerServer: ",m_another_addr,":",m_main_port," connect to ",ext_ip,":",ext_port," successfully");
-            log("NatCheckerServer: ","filterType: ENDPOINT_INDEPENDENT");
+            Log(INFO) << m_another_addr << ":" << m_main_port << " connect to " << ext_ip << ":" << ext_port << " successfully" << eol;
+            Log(INFO) << "filterType: ENDPOINT_INDEPENDENT" << eol;
             filterType = nat_type::ENDPOINT_INDEPENDENT;
         }
         else
         {
-            log("NatCheckerServer: ",m_another_addr,":",m_main_port," fail to connect to ",ext_ip,":",ext_port);
+            Log(INFO) << m_another_addr << ":" << m_main_port << " fail to connect to " << ext_ip << ":" << ext_port << eol;
         	// 若无法连接上，则关闭原来的 Client Socket，重新打开一个，绑定地址为 IP1:Port2，并尝试连接
             if(!(c->reopen() && c->bind(m_main_addr,m_another_port))){
                 delete c;
@@ -134,13 +134,13 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             canConnect = c->connect(ext_ip,ext_port,_getConnectRetryTime());
 
             if(canConnect){
-                log("NatCheckerServer: ",m_main_addr,":",m_another_port," connect to ",ext_ip,":",ext_port," successfully");
+                Log(INFO) << m_main_addr << ":" << m_another_port << " connect to " << ext_ip << ":" << ext_port << " successfully" << eol;
                 filterType = nat_type::ADDRESS_DEPENDENT;
-                log("NatCheckerServer: ","filterType: ADDRESS_DEPENDENT");
+                Log(INFO) << "filterType: ADDRESS_DEPENDENT" << eol;
             }else{
-                log("NatCheckerServer: ",m_main_addr,":",m_another_port," fail to connect to ",ext_ip,":",ext_port);
+                Log(INFO) << m_main_addr << ":" << m_another_port << " fail to connect to " << ext_ip << ":" << ext_port << eol;
                 filterType = nat_type::ADDRESS_AND_PORT_DEPENDENT;
-                log("NatCheckerServer: ","filterType: ADDRESS_AND_PORT_DEPENDENT");
+                Log(INFO) << "filterType: ADDRESS_AND_PORT_DEPENDENT" << eol;
             }
         }
 
@@ -180,12 +180,12 @@ void NatCheckerServer::handle_request(ClientSocket* client){
         string ext_ip2 = c->getPeerAddr();
         port_type ext_port2 = c->getPeerPort();
 
-        log("NatCheckerServer: ","ext_ip2: ",ext_ip2);
-        log("NatCheckerServer: ","ext_port2: ",ext_port2);
+        Log(INFO) << "ext_ip2: ",ext_ip2 << eol;
+        Log(INFO) << "ext_port2: ",ext_port2 << eol;
 
         // 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
         if(ext_ip2 != ext_ip)
-            log("NatCheckerServer: ","Warning: The NAT allocate the different global IP to the same host");
+            Log(WARN) << "The NAT allocate the different global IP to the same host" << eol;
 
         if(ext_ip2 == ext_ip && ext_port2 == ext_port) // 第2次的外网地址与第1次的相同
         {
@@ -204,7 +204,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             natType.setPrediction();
             record.setNatType(natType);
 
-            log("NatCheckerServer: ","mapType: ENDPOINT_INDEPENDENT");
+            Log(INFO) << "mapType: ENDPOINT_INDEPENDENT" << eol;
         }
         else	// 第2次的外网地址与第1次的不同，需要进一步判断是 Address Dependent 还是 Address And Port Dependent
         {
@@ -227,12 +227,12 @@ void NatCheckerServer::handle_request(ClientSocket* client){
             string ext_ip3 = c->getPeerAddr();
             port_type ext_port3 = c->getPeerPort();
 
-            log("NatCheckerServer: ","ext_ip3: ",ext_ip3);
-            log("NatCheckerServer: ","ext_port3: ",ext_port3);
+            Log(INFO) << "ext_ip3: ",ext_ip3 << eol;
+            Log(INFO) << "ext_port3: ",ext_port3 << eol;
 
             // 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
             if(ext_ip2 != ext_ip3)
-                log("NatCheckerServer: ", "Warning: The NAT allocate the different global IP to the same host");
+                Log(INFO) <<  "Warning: The NAT allocate the different global IP to the same host" << eol;
 
             if(ext_ip3 == ext_ip2 && ext_port3 == ext_port2) // 第3次的外网地址与第2次的相同
             {
@@ -253,7 +253,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 // 第2次的外网与第1次的不同，第3次与第2次的相同，表示是地址相关的 Map 类型，记得更新 DataRecord 的外部地址，以最新的为准
                 record.setExtAddress(Address(ext_ip2,ext_port2 - ext_port + ext_port2));
 
-                log("NatCheckerServer: ","mapType: ADDRESS_DEPENDENT");
+                Log(INFO) << "mapType: ADDRESS_DEPENDENT" << eol;
             }
             else // 第3次与第2次的端口不同，表示时 Address And Port Dependent
             {
@@ -285,8 +285,8 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                     ext_ip_n = c->getPeerAddr();
                     ext_port_n = c->getPeerPort();
 
-                    log("NatCheckerServer: ","ext_ip_n: ",ext_ip_n);
-                    log("NatCheckerServer: ","ext_port_n: ",ext_port_n);
+                    Log(INFO) << "ext_ip_n: " << ext_ip_n << eol;
+                    Log(INFO) << "ext_port_n: " << ext_port_n << eol;
 
                     delta_pre = delta_cur;
                     delta_cur = ext_port_n - ext_port_pre;
@@ -304,7 +304,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
                 c = NULL;
 
                 nat_type natType(true,nat_type::ADDRESS_AND_PORT_DEPENDENT,filterType);
-                log("NatCheckerServer: ","mapType: ADDRESS_AND_PORT_DEPENDENT");
+                Log(INFO) << "mapType: ADDRESS_AND_PORT_DEPENDENT" << eol;
                 if( try_time == _getMaxTryTime() ){ // 端口随机变化
                     natType.setPrediction(false);
                 }else{  // 设置增量为 delta_cur;
@@ -359,7 +359,7 @@ void NatCheckerServer::waitForClient(){
         if(ret == -1)
         {
             if(errno == EINTR)
-                log("NatCheckerServer: ","Warning : NatCheckerServer is interrupted at function select in NatCheckerServer::waitForClient");
+                Log(WARN) << "NatCheckerServer is interrupted at function select" << eol;
             else
                 THROW_EXCEPTION(ErrorStateException,"select error in NatCheckerServer::waitForClient");
         }else if(ret == 0)
@@ -372,7 +372,7 @@ void NatCheckerServer::waitForClient(){
             {
                 ClientSocket *client = m_socket->accept();
 
-                log("NatCheckerServer: Client \"",client->getPeerAddr(),':',client->getPeerPort(),"\" connect");
+                Log(INFO) << "Client \"" << client->getPeerAddr() << ':' << client->getPeerPort() << "\" connect" << eol;
 
                 DefaultClientSocket *defaultSocket = dynamic_cast<DefaultClientSocket*>(client);
                 CHECK_STATE_EXCEPTION(defaultSocket);
@@ -392,7 +392,7 @@ void NatCheckerServer::waitForClient(){
                     string content = (*it)->read();
                     CHECK_STATE_EXCEPTION(content.empty());
 
-                    log("NatCheckerServer: Client \"",(*it)->getPeerAddr(),':',(*it)->getPeerPort(),"\" disconnect");
+                    Log(INFO) << "Client \"" << (*it)->getPeerAddr() << ':' << (*it)->getPeerPort() << "\" disconnect" << eol;
 
                     delete (*it);
 

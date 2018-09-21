@@ -34,10 +34,8 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_sinks.h"
 #include <sstream>
-#include <thread>
 #include <condition_variable>
 #include <mutex>
-#include <sys/time.h>
 
 namespace Lib {
 
@@ -110,21 +108,7 @@ public:
     }
 
 private:
-    std::shared_ptr<spdlog::logger> _getLogger(){
-        time_t tnow = spdlog::log_clock::to_time_t(spdlog::log_clock::now());
-        tm date = spdlog::details::os::localtime(tnow);
-
-        std::ostringstream os;
-        os << date.tm_year + 1900 << date.tm_mon + 1 << date.tm_mday << date.tm_hour << date.tm_min << date.tm_sec;
-        std::string loggername = os.str();
-
-        std::shared_ptr<spdlog::logger> logger = spdlog::stdout_logger_mt(loggername);
-
-        logger->set_pattern("[%l] [%Y-%m-%d %H:%M:%S] %v");
-        logger->set_level(spdlog::level::trace);
-
-        return logger;
-    }
+    std::shared_ptr<spdlog::logger> _getLogger();
 
 private:
     std::shared_ptr<spdlog::logger> m_logger;
@@ -144,102 +128,31 @@ public:
 
     ~LoggerTimer(){
         stop();
+        // Fix: 可能没等线程结束就析构，线程里可能访问野指针
     }
 
-    void setLoggerFunction(Logger *logger,loggerFuncType func){
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_logger = logger;
-        m_func = func;
-    }
+    void setLoggerFunction(Logger *logger,loggerFuncType func);
 
-    void setLocation(const char* file,const char* function,int line){
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_file = file;
-        m_function = function;
-        m_line = line;
-    }
+    void setLocation(const char* file,const char* function,int line);
 
-    void append(std::string&& str){
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_buffer.append(std::move(str));
-    }
+    void append(std::string&& str);
 
-    void start(){
-        std::unique_lock<std::mutex> lock(m_mutex);
-        if(m_time != 0)
-            return;
+    void start();
 
-        _setCurrentTime();
-        std::thread(thread_function,this).detach();
-    }
+    void flush();
 
-    void flush(){
-        std::ostringstream os;
-        os << '[' << m_file << ':' << m_line << "] [" << m_function << "] ";
-        std::string buffer = os.str();
+    static void thread_function(LoggerTimer *timer);
 
-        buffer.append(std::move(m_buffer));
+    void stop();
 
-        (m_logger->*(m_func))(buffer);
-
-        m_buffer.clear();
-        m_time = 0;
-    }
-
-    static void thread_function(LoggerTimer *timer){
-        std::unique_lock<std::mutex> lock(timer->m_mutex);
-
-        if(timer->m_time == 0){
-            return;
-        }
-
-        while(1){
-            if(timer->_getInterval() + timer->m_time < timer->_getCurrentTime()){
-                timer->flush();
-                return;
-            }
-            long interval = (timer->_getInterval() + timer->m_time - timer->_getCurrentTime());
-            timer->m_cond_var.wait_for(lock, std::chrono::microseconds(interval));
-            if(timer->_getCurrentTime() - timer->m_time >= timer->_getInterval()){
-                if(timer->m_time != 0){
-                    timer->flush();
-                }
-                return;
-            }
-        }
-    }
-
-    void stop(){
-        std::unique_lock<std::mutex> lock(m_mutex);
-        if(m_time != 0){
-            m_time = 0;
-            m_cond_var.notify_one();
-        }
-    }
-
-    void reset(){
-        m_mutex.lock();
-        if(m_time != 0){
-            _setCurrentTime();
-            m_mutex.unlock();
-        }else{
-            m_mutex.unlock();
-            start();
-        }
-    }
+    void reset();
 
 private:
     long _getInterval(){ return 1000; } // 1000 us = 1 ms
 
-    long _getCurrentTime(){
-        struct timeval tv;
-        gettimeofday(&tv,NULL);
-        return (tv.tv_sec % 10)*1000000 + tv.tv_usec;
-    }
+    long _getCurrentTime();
 
-    void _setCurrentTime(){
-        m_time = _getCurrentTime();
-    }
+    void _setCurrentTime(){ m_time = _getCurrentTime(); }
 
 private:
     long m_time;
@@ -256,7 +169,7 @@ private:
     loggerFuncType m_func;
     Logger *m_logger;
 
-    ostringstream os;
+    std::ostringstream os;
 };
 
 class LoggerStream
@@ -294,20 +207,18 @@ private:
 };
 
 struct _eol{
+    friend LoggerStream& operator<<(LoggerStream& os, const _eol &c){
+        return os.flush();
+    }
+
+    template<typename OStream>
+    friend OStream &operator<<(OStream &os, const _eol &c){}
 };
 
-LoggerStream& operator<<(LoggerStream& os, const _eol &c){
-    return os.flush();
-}
-
-template<typename OStream>
-OStream &operator<<(OStream &os, const _eol &c){
-}
-
 // È«¾ÖÔ¤¶¨Òå±äÁ¿
-_eol eol;
-LoggerStream _global_logger_stream;
-Logger _global_logger;
+extern _eol eol;
+extern LoggerStream _global_logger_stream;
+extern Logger _global_logger;
 
 }
 

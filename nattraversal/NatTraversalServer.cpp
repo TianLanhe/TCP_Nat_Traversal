@@ -64,7 +64,7 @@ bool NatTraversalServer::init(){
     string content;
     for(vector<string>::size_type i=0;i<ips.size();++i)
         content.append('\"' + ips[i] + "\" ");
-    //log("NatTraversalServer: ","Local IP: ",content);
+    Log(INFO) << "Local IP: " << content << eol;
 
     if(ips.size() < 2)
         return false;
@@ -129,7 +129,7 @@ void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
         return;
     }
 
-    //log("NatTraversalServer: ","Client \"",data[IDENTIFIER],"\" login (IP: ",socket->getPeerAddr(),")");
+    Log(INFO) << "Client \"" << data[IDENTIFIER] << "\" login (IP: " << socket->getPeerAddr() << ")" << eol;
 
     m_user_manager->addRecord(UserRecord(data.getString(IDENTIFIER),socket));
 }
@@ -170,7 +170,7 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
         delete socket;
         userManager->removeRecord(identifier);
 
-        //log("NatTraversalServer: ","Client \"",identifier,"\" logout");
+        Log(INFO) << "Client \"" << identifier << "\" logout" << eol;
     }
     else
     {
@@ -179,11 +179,10 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             bool isReady = data.getBool(READY_TO_CONNECT);
             userManager->getRecord(identifier).setReady(isReady);
 
-            if(isReady){
-                //log("NatTraversalServer: ","Client \"",identifier,"\" set ready to accept connecting");
-            }else{
-                //log("NatTraversalServer: ","Client \"",identifier,"\" set unready to accept connecting");
-            }
+            if(isReady)
+                Log(INFO) << "Client \"" << identifier << "\" set ready to accept connecting" << eol;
+            else
+                Log(INFO) << "Client \"" << identifier << "\" set unready to accept connecting" << eol;
         }
         else if(data.isMember(PEER_HOST))	// 内容包括 PEER_HOST ，进行穿透操作
         {
@@ -198,15 +197,15 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             bool isReady = (*userManager)[identifier].isReady();
             if(isReady){
                 (*userManager)[identifier].setReady(false);
-                //log("NatTraversalServer: ","Client \"",identifier,"\" is set to be unready");
+                Log(INFO) << "Client \"" << identifier << "\" is set to be unready" << eol;
             }
 
             string peer_identifier = data.getString(PEER_HOST);
-            //log("NatTraversalServer: ","Client \"",identifier,"\" want to connect with Client \"",peer_identifier,"\"");
+            Log(INFO) << "Client \"" << identifier << "\" want to connect with Client \"" << peer_identifier << "\"" << eol;
 
             // 判断准备连接的对等方是否已经登录以及是否允许连接
             if(!userManager->hasRecord(peer_identifier) || !(*userManager)[peer_identifier].isReady()){
-                //log("NatTraversalServer: ","Client \"",peer_identifier,"\" is not logged in");
+                Log(INFO) << "Client \"" << peer_identifier << "\" is not logged in" << eol;
                 goto r;
             }
 
@@ -219,22 +218,22 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             if(!proxy.write(data))
                 goto r;
 
-            //log("NatTraversalServer: ","Waiting for Client \"",identifier,"\" to detect the nat type");
+            Log(INFO) << "Waiting for Client \"" << identifier << "\" to detect the nat type" << eol;
 
 			// 向对等方发送 STUN 的地址，让其进行 NAT 类型检测(对等方已经随时监听着)
             data.remove(CAN_CONNECT);
             proxy.setSocket(userManager->getRecord(peer_identifier).getClientSocket());
             proxy.write(data);
-            //log("NatTraversalServer: ","Waiting for Client \"",peer_identifier,"\" to detect the nat type");
+            Log(INFO) << "Waiting for Client \"" << peer_identifier << "\" to detect the nat type" << eol;
 
 			// Review: 这里会阻塞等待 NAT 类型检测完成，如果客户端和对等方发送出现问题，这里整个服务器会永远阻塞出不来
 			// 等待客户端 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(identifier);
-            //log("NatTraversalServer: ","Client \"",identifier,"\" finish NAT type detection");
+            Log(INFO) << "Client \"" << identifier << "\" finish NAT type detection" << eol;
 
 			// 等待对方等 NAT 类型检测完成的信号
             m_traversal_server->waitForDataBaseUpdate(peer_identifier);
-            //log("NatTraversalServer: ","Client \"",peer_identifier,"\" finish NAT type detection");
+            Log(INFO) << "Client \"" << peer_identifier << "\" finish NAT type detection" << eol;
 
 			// 两方 NAT 类型检测完成，从数据库中取出两方的外部地址与 NAT 类型信息
             records[0] = m_traversal_server->m_database->getRecord(identifier);
@@ -255,7 +254,7 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             static const char* typeStr[]={"","connect directly","connect nearby","connect randomly",
                                           "listen directly","listen and punch a hole","listen and punch some hole"};
 
-            //log("NatTraversalServer: ",identifiers[0],": ",typeStr[types[0]],", ",identifiers[1],": ",typeStr[types[1]]);
+            Log(INFO) << identifiers[0] << ": " << typeStr[types[0]] << ", " << identifiers[1] << ": " << typeStr[types[1]] << eol;
             
             // 这里判断了一下哪方是 Listen 的，给 Listen 的一方先发送数据，以使 Listen 的一方能在对方 Connect 之前准备好，Connect 客户端那边也会
             // 休眠一段时间(0.5s)以保证 Listen 一方准备好
@@ -275,13 +274,13 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
             if(!proxy.write(data))
                 goto r;
 
-            //log("NatTraversalServer: ","send traversal command to Client \"",identifiers[firstSend],"\"");
+            Log(INFO) << "send traversal command to Client \"" << identifiers[firstSend] << "\"" << eol;
 
             data = GetTraversalData(types[1-firstSend],natTypes[firstSend],records[firstSend].getExtAddress().ip,records[firstSend].getExtAddress().port);
             proxy.setSocket(sockets[1-firstSend]);
             proxy.write(data);
 
-            //log("NatTraversalServer: ","send traversal command to Client \"",identifiers[1-firstSend],"\"");
+            Log(INFO) << "send traversal command to Client \"" << identifiers[1-firstSend] << "\"" << eol;
 
             return;
 r:
@@ -294,7 +293,7 @@ r:
         }
         else
         {
-            //log("NatTraversalServer: ","Client \"",identifier,"\" send something can not recognize");
+            Log(INFO) << "Client \"" << identifier << "\" send something can not recognize" << eol;
         }
     }
 }
@@ -335,7 +334,7 @@ void NatTraversalServer::waitForClient(){
         if(ret == -1)
         {
             if(errno == EINTR){
-                //log("NatTraversalServer: ","Warning : NatTraversalServer is interrupted at function select in NatTraversalServer::waitForClient");
+                Log(WARN) << "NatTraversalServer is interrupted at function select" << eol;
             }else{
                 THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
             }

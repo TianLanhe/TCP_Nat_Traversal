@@ -50,6 +50,7 @@ icf_nat_type =
 icf_object = include/Exception.h $(icf_exception)
 icf_smart_pointer = include/Exception.h $(icf_exception)
 icf_utility =
+icf_log = 
 
 ########################################## socket
 
@@ -143,8 +144,8 @@ test: mytest.o $(trans_obj) $(reuse_sock_obj) $(client_obj) Exception.o
 client: client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o
 	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o -lpthread
 	
-server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o
-	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o -lpthread
+server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o
+	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o -lpthread
 	
 mytest.o: mytest.cpp \
 	$(nat_traversal_inc_dir)/NatTraversalClient.h $(icf_nat_checker_client) \
@@ -218,6 +219,9 @@ Semaphore.o: source/Semaphore.cpp include/Semaphore.h
 Utility.o: source/Utility.cpp include/Utility.h \
 			include/Exception.h $(icf_exception)
 	g++ -c source/Utility.cpp
+
+Log.o: source/Log.cpp include/Log.h $(icf_log)
+	g++ -c source/Log.cpp -std=c++11 -I. -Iinclude
 	
 DefaultSocket.o: socket/DefaultSocket.h socket/DefaultSocket.cpp $(icf_default_socket)
 	g++ -c socket/DefaultSocket.cpp
@@ -265,7 +269,7 @@ NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
 		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
 		$(database_inc_dir)/DataBase.h $(icf_databse) \
 		include/Log.h $(icf_log)
-	g++ -c natchecker/NatCheckerServer.cpp -std=c++11
+	g++ -c natchecker/NatCheckerServer.cpp -std=c++11 -I. -Iinclude/
 	
 TraversalCommand.o: traversalcommand/TraversalCommand.cpp \
 					$(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command) \
