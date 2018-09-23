@@ -1,4 +1,4 @@
-#include "../include/natchecker/NatCheckerServer.h"
+#include "../natchecker/StandardNatCheckerServer.h"
 #include "../include/socket/ClientSocket.h"
 #include "../socket/DefaultClientSocket.h"
 #include "../socket/DefaultServerSocket.h"
@@ -22,19 +22,21 @@ using namespace Lib;
 typedef nat_type::filter_type filter_type;
 typedef nat_type::map_type map_type;
 
-NatCheckerServer::NatCheckerServer(const ip_type& main_addr, port_type main_port, const ip_type& another_addr, port_type another_port)
+StandardNatCheckerServer::StandardNatCheckerServer(const ip_type& main_addr, port_type main_port, const ip_type& another_addr, port_type another_port)
     :m_main_addr(main_addr),m_main_port(main_port),
-      m_another_addr(another_addr),m_another_port(another_port),
-      m_database(NULL){
+      m_another_addr(another_addr),m_another_port(another_port){
     m_main_server = ReuseSocketFactory::GetInstance()->GetServerSocket();
 }
 
-NatCheckerServer::~NatCheckerServer(){
+StandardNatCheckerServer::~StandardNatCheckerServer(){
     if(m_main_server)
         delete m_main_server;
+
+    for(vector<DefaultClientSocket>::size_type i=0;i<m_clientVec.size();++i)
+        delete m_clientVec[i];
 }
 
-bool NatCheckerServer::setListenNum(size_t num){
+bool StandardNatCheckerServer::setListenNum(size_t num){
     if(!m_main_server)
         return false;
 
@@ -44,17 +46,7 @@ bool NatCheckerServer::setListenNum(size_t num){
     return !m_main_server->isListen() && m_main_server->listen(num);
 }
 
-bool NatCheckerServer::setDataBase(DataBase<DataRecord>* database){
-    CHECK_PARAMETER_EXCEPTION(database);
-
-    if(m_database)
-        return false;
-
-    m_database = database;
-    return true;
-}
-
-void NatCheckerServer::handle_request(ClientSocket* client){
+void StandardNatCheckerServer::handle_request(ClientSocket* client){
     TransmissionProxy proxy(client);
     TransmissionData data = proxy.read();
 
@@ -323,7 +315,7 @@ void NatCheckerServer::handle_request(ClientSocket* client){
     CHECK_STATE_EXCEPTION(m_database->addRecord(record));
 }
 
-void NatCheckerServer::waitForClient(){
+void StandardNatCheckerServer::waitForClient(){
     if(!m_main_server->isListen() && !setListenNum(DEFAULT_LISTEN_NUM))
         THROW_EXCEPTION(InvalidOperationException,"bind or listen error");
 

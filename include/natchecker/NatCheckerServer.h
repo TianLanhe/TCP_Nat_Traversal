@@ -3,10 +3,8 @@
 
 #include "../Object.h"
 #include "NatCheckerCommon.h"
-#include "../socket/ServerSocket.h"
 
 #include <string>
-#include <vector>
 
 LIB_BEGIN
 
@@ -38,41 +36,30 @@ private:
     nat_type m_natType;
 };
 
-class ClientSocket;
-class DefaultClientSocket;
-
 template < typename T >
 class DataBase;
 
 class NatCheckerServer : public Object
 {
 public:
-    NatCheckerServer(const ip_type&, port_type, const ip_type&, port_type);
-    ~NatCheckerServer();
+    NatCheckerServer():m_database(NULL){}
 
-    bool setDataBase(DataBase<DataRecord>*);
-    bool setListenNum(size_t);
+    // use database object to store and update the information of nat type which traversal server needs
+    virtual bool setDataBase(DataBase<DataRecord>* database){
+        CHECK_PARAMETER_EXCEPTION(database);
+
+        if(m_database)
+            return false;
+
+        m_database = database;
+        return true;
+    }
 
     // this function will run forever, you should call this function in a new thread
-    void waitForClient();
+    virtual void waitForClient() = 0;
 
 protected:
-    void handle_request(ClientSocket*);
-
-    size_t _getMaxTryTime(){ return 3; }
-    size_t _getConnectRetryTime(){ return 1; }
-
-private:
-    ServerSocket *m_main_server;
-
-    std::string m_another_addr;
-    std::string m_main_addr;
-    port_type m_main_port;
-    port_type m_another_port;
-
     DataBase<DataRecord> *m_database;
-
-    std::vector<DefaultClientSocket*> m_clientVec;
 };
 
 LIB_END

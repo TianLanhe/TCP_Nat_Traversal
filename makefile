@@ -17,7 +17,7 @@ trans_obj = TransmissionProxy.o \
 	json_value.o
 	
 server_obj = NatTraversalServer.o \
-			NatCheckerServer.o
+			StandardNatCheckerServer.o
 
 client_obj = NatTraversalClient.o \
 			NatCheckerClient.o
@@ -101,6 +101,8 @@ icf_nat_checker_client = include/Object.h $(icf_object) \
 						$(sock_inc_dir)/ClientSocket.h $(icf_client_socket)
 icf_nat_checker_server = include/Object.h $(icf_object) \
 						$(nat_checker_inc_dir)/NatCheckerCommon.h $(icf_nat_checker_common) \
+
+icf_standard_nat_checker_server = $(nat_checker_inc_dir)/NatCheckerServer.h $(icf_nat_checker_server) \
 						$(sock_inc_dir)/ServerSocket.h $(icf_server_socket)
 
 ########################################### observer 
@@ -144,8 +146,8 @@ test: mytest.o $(trans_obj) $(reuse_sock_obj) $(client_obj) Exception.o
 client: client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o
 	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o -lpthread
 	
-server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o
-	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o -lpthread
+server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o Utility.o
+	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o Utility.o -lpthread
 	
 mytest.o: mytest.cpp \
 	$(nat_traversal_inc_dir)/NatTraversalClient.h $(icf_nat_checker_client) \
@@ -158,8 +160,11 @@ client.o: main/client.cpp \
 	g++ -c main/client.cpp -std=c++11
 	
 server.o: main/server.cpp \
-	$(nat_traversal_inc_dir)/NatTraversalServer.h $(icf_nat_traversal_server)
-	g++ -c main/server.cpp
+	$(nat_traversal_inc_dir)/NatTraversalServer.h $(icf_nat_traversal_server) \
+	include/Utility.h $(icf_utility) \
+	natchecker/StandardNatCheckerServer.h $(icf_standard_nat_checker_server) \
+	include/Log.h $(icf_log)
+	g++ -c main/server.cpp -std=c++11 -I. -Iinclude
 
 ########################################### object
 
@@ -259,8 +264,8 @@ NatCheckerClient.o: natchecker/NatCheckerClient.cpp \
 		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy)
 	g++ -c natchecker/NatCheckerClient.cpp
 
-NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
-		$(nat_checker_inc_dir)/NatCheckerServer.h $(icf_nat_checker_server) \
+StandardNatCheckerServer.o: natchecker/StandardNatCheckerServer.cpp \
+		natchecker/StandardNatCheckerServer.h $(icf_standard_nat_checker_server) \
 		$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
 		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
 		socket/DefaultClientSocket.h $(icf_default_client_socket) \
@@ -269,7 +274,7 @@ NatCheckerServer.o: natchecker/NatCheckerServer.cpp \
 		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
 		$(database_inc_dir)/DataBase.h $(icf_databse) \
 		include/Log.h $(icf_log)
-	g++ -c natchecker/NatCheckerServer.cpp -std=c++11 -I. -Iinclude/
+	g++ -c natchecker/StandardNatCheckerServer.cpp -std=c++11 -I. -Iinclude/
 	
 TraversalCommand.o: traversalcommand/TraversalCommand.cpp \
 					$(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command) \

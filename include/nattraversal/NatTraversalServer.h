@@ -52,7 +52,7 @@ public:
 public:
     NatTraversalServer():m_socket(NULL),m_database(NULL),m_checker_server(NULL),m_user_manager(NULL){ }
 
-    bool init();
+    bool init(const ip_type& main_ip,NatCheckerServer *chcker_server);
 
     void term();
 
@@ -78,7 +78,6 @@ private:
     DefaultDataBase<DataRecord> *m_database;
 
     ip_type m_main_ip;
-    ip_type m_scondary_ip;
 
     UserManager* m_user_manager;
 

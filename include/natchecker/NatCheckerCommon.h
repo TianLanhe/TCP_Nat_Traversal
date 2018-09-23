@@ -1,7 +1,6 @@
 #ifndef NAT_CHECKER_COMMON_H
 #define NAT_CHECKER_COMMON_H
 
-#include <string>
 #include "../NatType.h"
 
 namespace Lib{

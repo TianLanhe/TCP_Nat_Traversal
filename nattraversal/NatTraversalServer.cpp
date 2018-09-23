@@ -9,13 +9,6 @@
 #include "NatTraversalCommon.h"
 #include "../include/Log.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <linux/sockios.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-
 #include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
@@ -28,38 +21,8 @@ extern int errno;
 using namespace std;
 using namespace Lib;
 
-vector<string> getLocalIps(){
-    vector<string> ret;
-
-    int s = socket(PF_INET, SOCK_DGRAM, 0);
-
-    struct ifconf conf;
-    char buff[BUFSIZ];
-    conf.ifc_len = BUFSIZ;
-    conf.ifc_buf = buff;
-
-    if(ioctl(s, SIOCGIFCONF, &conf) == -1)
-        return ret;
-
-    int num = conf.ifc_len / sizeof(struct ifreq);
-    struct ifreq *ifr = conf.ifc_req;
-
-    for(int i=0;i < num;++i,++ifr){
-        struct sockaddr_in *sin = (struct sockaddr_in *)(&ifr->ifr_addr);
-
-        if(ioctl(s, SIOCGIFFLAGS, ifr) == -1)
-            return ret;
-
-        if(((ifr->ifr_flags & IFF_LOOPBACK) == 0) && (ifr->ifr_flags & IFF_UP))
-            ret.push_back(string(inet_ntoa(sin->sin_addr)));
-    }
-
-    ::close(s);
-    return ret;
-}
-
-bool NatTraversalServer::init(){
-    vector<string> ips = getLocalIps();
+bool NatTraversalServer::init(const ip_type& main_ip,NatCheckerServer *checker_server){
+    /*vector<string> ips = getLocalIps();
 
     string content;
     for(vector<string>::size_type i=0;i<ips.size();++i)
@@ -70,7 +33,10 @@ bool NatTraversalServer::init(){
         return false;
 
     m_main_ip = ips[0];
-    m_scondary_ip = ips[1];
+    m_secondary_ip = ips[1];*/
+    CHECK_PARAMETER_EXCEPTION(checker_server && !main_ip.empty());
+
+    m_main_ip = main_ip;
 
     m_socket = new DefaultServerSocket();
     CHECK_NO_MEMORY_EXCEPTION(m_socket);
@@ -87,15 +53,16 @@ bool NatTraversalServer::init(){
 	// 将 NatTraversalServer 作为观察者添加到数据库中，当 NAT 数据库添加或删除一条记录时，会通知主服务器
     m_database->addObserver(this);
 
-    m_checker_server = new NatCheckerServer(m_main_ip,STUN_MAIN_PORT,m_scondary_ip,STUN_SECONDARY_PORT);
-    CHECK_NO_MEMORY_EXCEPTION(m_checker_server);
+    // chekcer_server 改为由 main 函数传进来，而不是 traversal server 自己构建
+    /*m_checker_server = new NatCheckerServer(m_main_ip,STUN_MAIN_PORT,m_scondary_ip,STUN_SECONDARY_PORT);
+    CHECK_NO_MEMORY_EXCEPTION(m_checker_server);*/
+    m_checker_server = checker_server;
 
     if(!m_checker_server->setDataBase(m_database)){
         delete m_socket;
         m_socket = NULL;
         delete m_database;
         m_database = NULL;
-        delete m_checker_server;
         m_checker_server = NULL;
         return false;
     }
@@ -108,13 +75,19 @@ bool NatTraversalServer::init(){
 
 void NatTraversalServer::term(){
     if(m_checker_server)
-        delete m_checker_server;
-    if(m_database)
+        m_checker_server = NULL;
+    if(m_database){
         delete m_database;
-    if(m_socket)
+        m_database = NULL;
+    }
+    if(m_socket){
         delete m_socket;
-    if(m_user_manager)
+        m_socket = NULL;
+    }
+    if(m_user_manager){
         delete m_user_manager;
+        m_user_manager = NULL;
+    }
 }
 
 void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){

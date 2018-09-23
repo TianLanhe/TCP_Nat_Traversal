@@ -4,8 +4,45 @@
 #include <ctime>
 #include <cstdlib>
 
+using namespace std;
 using namespace Lib;
 using namespace Lib::Util;
+
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <stdio.h>
+
+vector<string> Util::getLocalIps(){
+    vector<string> ret;
+
+    int s = socket(PF_INET, SOCK_DGRAM, 0);
+
+    struct ifconf conf;
+    char buff[BUFSIZ];
+    conf.ifc_len = BUFSIZ;
+    conf.ifc_buf = buff;
+
+    if(ioctl(s, SIOCGIFCONF, &conf) == -1)
+        return ret;
+
+    int num = conf.ifc_len / sizeof(struct ifreq);
+    struct ifreq *ifr = conf.ifc_req;
+
+    for(int i=0;i < num;++i,++ifr){
+        struct sockaddr_in *sin = (struct sockaddr_in *)(&ifr->ifr_addr);
+
+        if(ioctl(s, SIOCGIFFLAGS, ifr) == -1)
+            return ret;
+
+        if(((ifr->ifr_flags & IFF_LOOPBACK) == 0) && (ifr->ifr_flags & IFF_UP))
+            ret.push_back(string(inet_ntoa(sin->sin_addr)));
+    }
+
+    ::close(s);
+    return ret;
+}
 
 int initRandSeed(){
     srand(time(NULL));
