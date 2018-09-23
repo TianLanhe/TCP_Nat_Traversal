@@ -1,12 +1,12 @@
 #ifndef LOG_H
 #define LOG_H
 
-#ifndef MY_DEBUG       // 碌梅脢脭驴陋鹿脴
+#ifndef MY_DEBUG       // 调试开关
 #define MY_DEBUG
 #endif
 
 #ifdef MY_DEBUG
-// 脤谩鹿漏虏脵脳梅陆脫驴脷
+// 提供操作的宏接口
 #define Log(level) _global_logger_stream.setLoggerFunction(&Lib::_global_logger,&Lib::Logger::level).setLocation(__FILE__,__FUNCTION__,__LINE__)
 #define Logf(level,format,args...) _global_logger.level(format, ##args)
 #define TRACE trace
@@ -18,7 +18,7 @@
 
 #else
 
-#define Log(level)
+#define Log(level) _global_logger_stream
 #define Logf(level,format,args...)
 #define TRACE
 #define DEBUG
@@ -29,16 +29,17 @@
 
 #endif
 
-#ifdef MY_DEBUG
 
+#ifdef MY_DEBUG
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_sinks.h"
 #include <sstream>
 #include <condition_variable>
 #include <mutex>
+#endif //!MY_DUBEG
 
 namespace Lib {
-
+#ifdef MY_DEBUG
 class Logger
 {
 public:
@@ -128,7 +129,7 @@ public:
 
     ~LoggerTimer(){
         stop();
-        // Fix: 鍙兘娌＄瓑绾跨▼缁撴潫灏辨瀽鏋勶紝绾跨▼閲屽彲鑳借闂噹鎸囬拡
+        // Fix: 可能在线程退出之前就析构了，有访问野指针的风险
     }
 
     void setLoggerFunction(Logger *logger,loggerFuncType func);
@@ -141,8 +142,6 @@ public:
 
     void flush();
 
-    static void thread_function(LoggerTimer *timer);
-
     void stop();
 
     void reset();
@@ -153,6 +152,8 @@ private:
     long _getCurrentTime();
 
     void _setCurrentTime(){ m_time = _getCurrentTime(); }
+
+    static void thread_function(LoggerTimer *timer);
 
 private:
     long m_time;
@@ -172,12 +173,15 @@ private:
     std::ostringstream os;
 };
 
+#endif // !MY_DEBUG
+
 class LoggerStream
 {
 public:
+
+#ifdef MY_DEBUG
     typedef void (Logger::*loggerFuncType)(const std::string&);
 
-public:
     LoggerStream& setLoggerFunction(Logger *logger,loggerFuncType func){
         m_timer.setLoggerFunction(logger,func);
         return *this;
@@ -204,6 +208,16 @@ public:
 
 private:
     LoggerTimer m_timer;
+#else
+    template< typename T >
+    LoggerStream& operator<<(const T& msg){
+        return *this;
+    }
+
+    LoggerStream& flush(){
+        return *this;
+    }
+#endif  //!MY_DEBUG
 };
 
 struct _eol{
@@ -215,14 +229,15 @@ struct _eol{
     friend OStream &operator<<(OStream &os, const _eol &c){}
 };
 
-// 脠芦戮脰脭陇露篓脪氓卤盲脕驴
+// 全局预定义变量
 extern _eol eol;
 extern LoggerStream _global_logger_stream;
+
+#ifdef MY_DEBUG
 extern Logger _global_logger;
+#endif
 
 }
-
-#endif // !MY_DEBUG
 
 #endif // !LOG_H
 

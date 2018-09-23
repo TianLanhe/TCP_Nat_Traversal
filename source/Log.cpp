@@ -8,6 +8,7 @@ using namespace Lib;
 
 _eol Lib::eol;
 LoggerStream Lib::_global_logger_stream;
+#ifdef MY_DEBUG
 Logger Lib::_global_logger;
 
 shared_ptr<spdlog::logger> Logger::_getLogger(){
@@ -114,9 +115,4 @@ long LoggerTimer::_getCurrentTime(){
     return (tv.tv_sec % 10)*1000000 + tv.tv_usec;
 }
 
-/*LoggerStream& Lib::operator<<(LoggerStream& os, const _eol &c){
-    return os.flush();
-}
-
-template<typename OStream>
-OStream& Lib::operator<<(OStream &os, const _eol &c){}*/
+#endif //!MY_DEBUG
