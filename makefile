@@ -17,7 +17,7 @@ trans_obj = TransmissionProxy.o \
 	json_value.o
 	
 server_obj = NatTraversalServer.o \
-			StandardNatCheckerServer.o
+			SimplifiedNatCheckerServer.o      # 更换 checker server
 
 client_obj = NatTraversalClient.o \
 			NatCheckerClient.o
@@ -105,6 +105,8 @@ icf_nat_checker_server = include/Object.h $(icf_object) \
 icf_standard_nat_checker_server = $(nat_checker_inc_dir)/NatCheckerServer.h $(icf_nat_checker_server) \
 						$(sock_inc_dir)/ServerSocket.h $(icf_server_socket)
 
+icf_simplified_nat_checker_server = $(nat_checker_inc_dir)/NatCheckerServer.h $(icf_nat_checker_server) \
+
 ########################################### observer 
 
 icf_observer = 
@@ -146,8 +148,8 @@ test: mytest.o $(trans_obj) $(reuse_sock_obj) $(client_obj) Exception.o
 client: client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o
 	g++ -o client client.o $(trans_obj) $(reuse_sock_obj) $(client_obj) $(traversal_command_obj) Exception.o Utility.o -lpthread
 	
-server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o Utility.o
-	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o Utility.o -lpthread
+server: server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o
+	g++ -o server server.o $(trans_obj) $(reuse_sock_obj) $(server_obj) Semaphore.o $(traversal_command_obj) Exception.o Log.o -lpthread
 	
 mytest.o: mytest.cpp \
 	$(nat_traversal_inc_dir)/NatTraversalClient.h $(icf_nat_checker_client) \
@@ -161,7 +163,6 @@ client.o: main/client.cpp \
 	
 server.o: main/server.cpp \
 	$(nat_traversal_inc_dir)/NatTraversalServer.h $(icf_nat_traversal_server) \
-	include/Utility.h $(icf_utility) \
 	natchecker/StandardNatCheckerServer.h $(icf_standard_nat_checker_server) \
 	include/Log.h $(icf_log)
 	g++ -c main/server.cpp -std=c++11 -I. -Iinclude
@@ -276,6 +277,19 @@ StandardNatCheckerServer.o: natchecker/StandardNatCheckerServer.cpp \
 		include/Log.h $(icf_log)
 	g++ -c natchecker/StandardNatCheckerServer.cpp -std=c++11 -I. -Iinclude/
 	
+SimplifiedNatCheckerServer.o: natchecker/SimplifiedNatCheckerServer.cpp \
+		natchecker/SimplifiedNatCheckerServer.h $(icf_simplified_nat_checker_server) \
+		$(sock_inc_dir)/ReuseSocketFactory.h $(icf_reuse_factory) \
+		$(sock_inc_dir)/ClientSocket.h $(icf_client_socket) \
+		socket/DefaultClientSocket.h $(icf_default_client_socket) \
+		socket/DefaultServerSocket.h $(icf_default_server_socket) \
+		$(trans_inc_dir)/TransmissionData.h $(icf_trans_data) \
+		$(trans_inc_dir)/TransmissionProxy.h $(icf_trans_proxy) \
+		$(database_inc_dir)/DataBase.h $(icf_databse) \
+		include/Log.h $(icf_log)
+	g++ -c natchecker/SimplifiedNatCheckerServer.cpp -std=c++11 -I. -Iinclude/
+	
+
 TraversalCommand.o: traversalcommand/TraversalCommand.cpp \
 					$(traversal_command_inc_dir)/TraversalCommand.h $(icf_traversal_command) \
 					traversalcommand/ConnectDirectlyCommand.h $(icf_connect_directly) \

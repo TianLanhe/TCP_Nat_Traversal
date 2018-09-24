@@ -77,13 +77,14 @@ bool NatTraversalClient::setReadyToAccept(bool ready){
 ClientSocket::port_type NatTraversalClient::_genClientPort(){
     return Lib::Util::getRandomNumByRange(1024,65536);
 }
-
+#include <iostream>
+using namespace std;
 ClientSocket* NatTraversalClient::_checkNatTypeAndConnect(const ip_type& stun_ip, port_type stun_port){
     ClientSocket *ret = NULL;
 
     // 18/09/18:每次生成新的端口进行连接，灵活性更大，也便于单机调试
     port_type port = _genClientPort();
-
+cout << port << endl;
     // 进行 NAT 类型检测
     NatCheckerClient client(m_identifier,m_socket->getAddr(),port);
     if(!client.connect(stun_ip,stun_port))

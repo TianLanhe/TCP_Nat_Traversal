@@ -30,16 +30,17 @@ void func(){
 }
 
 int main(int argc,char *argv[]){
-	NatTraversalClient client("client1");
+    NatTraversalClient client("client2");
 	
-	if(!client.enroll("172.16.1.222",9999))
+    if(!client.enroll("192.168.43.137",9999))
 		return 1;
 		
-	ext_client = &client;
+    //ext_client = &client;
 	
-	thread(func).detach();
+    //thread(func).detach();
 	
-	ClientSocket *socket = client.connectToPeerHost("client2");
+    //ClientSocket *socket = client.connectToPeerHost("client2");
+    ClientSocket *socket = client.waitForPeerHost();
 	
 	if(socket == NULL){
 		cout << "connectToPeerHost return NULL" << endl;

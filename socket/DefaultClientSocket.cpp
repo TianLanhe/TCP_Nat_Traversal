@@ -109,7 +109,7 @@ size_t DefaultClientSocket::write(const char* buffer,size_t size)
 }
 
 typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() const {
-	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
+    CHECK_OPERATION_EXCEPTION(isOpen() && isBound() && isConnected());
 
 	struct sockaddr_in server_addr;
 	socklen_t len = sizeof(server_addr);
@@ -119,7 +119,7 @@ typename DefaultClientSocket::port_type DefaultClientSocket::getPeerPort() const
 }
 
 typename DefaultClientSocket::ip_type DefaultClientSocket::getPeerAddr() const {
-	CHECK_OPERATION_EXCEPTION(isOpen() && isBound());
+    CHECK_OPERATION_EXCEPTION(isOpen() && isBound() && isConnected());
 
 	struct sockaddr_in server_addr;
 	socklen_t len = sizeof(server_addr);

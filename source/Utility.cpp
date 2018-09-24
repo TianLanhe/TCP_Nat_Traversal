@@ -1,7 +1,6 @@
 #include "../include/Utility.h"
 #include "../include/Exception.h"
 
-#include <ctime>
 #include <cstdlib>
 
 using namespace std;
@@ -13,6 +12,8 @@ using namespace Lib::Util;
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
+
+#include <sys/time.h>
 
 vector<string> Util::getLocalIps(){
     vector<string> ret;
@@ -45,7 +46,9 @@ vector<string> Util::getLocalIps(){
 }
 
 int initRandSeed(){
-    srand(time(NULL));
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    srand(tv.tv_usec);
     return 0;
 }
 
@@ -79,7 +82,7 @@ int Util::getRandomNumByLength(int start,int length){
 }
 
 int Util::getRandomNumByRange(int start, int end){
-    if(start <= end || start >= RAND_MAX || start < 0){
+    if(start >= end || start >= RAND_MAX || start < 0){
         THROW_EXCEPTION(InvalidParameterException,"parameter error");
     }
 
