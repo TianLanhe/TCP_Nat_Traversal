@@ -102,7 +102,7 @@ void NatTraversalServer::getAndStoreIdentifier(DefaultClientSocket *socket){
         return;
     }
 
-    Log(INFO) << "Client \"" << data[IDENTIFIER] << "\" login (IP: " << socket->getPeerAddr() << ")" << eol;
+    Log(INFO) << "Client \"" << data[IDENTIFIER] << "\" login (" << socket->getPeerAddr() << ":" << socket->getPeerPort() << ")" << eol;
 
     m_user_manager->addRecord(UserRecord(data.getString(IDENTIFIER),socket));
 }
