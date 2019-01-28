@@ -33,17 +33,27 @@ bool DefaultClientSocket::close()
     return ret;
 }
 
-bool DefaultClientSocket::connect(const char* addr, port_type port, size_t time)
+bool DefaultClientSocket::connect(const char* addr, port_type port, size_t trytime, double timeout)
 {
-    CHECK_PARAMETER_EXCEPTION(time != 0 && addr != NULL);
-	CHECK_OPERATION_EXCEPTION(!m_bHasConnect && isOpen());
+    CHECK_PARAMETER_EXCEPTION(trytime != 0 && addr != NULL);
+    CHECK_PARAMETER_EXCEPTION(timeout > 0);
+    CHECK_OPERATION_EXCEPTION(!m_bHasConnect && isOpen());
 
 	struct sockaddr_in server_addr;
 	server_addr.sin_addr.s_addr = inet_addr(addr);
 	server_addr.sin_port = htons(port);
 	server_addr.sin_family = AF_INET;
 
-    size_t max_try_time = time < _getMaxTryTime() ? time : _getMaxTryTime();
+    // 获取之前的设置，一会用于恢复
+    struct timeval pre;
+    socklen_t len;
+    ::getsockopt(m_socket._socket(),SOL_SOCKET,SO_SNDTIMEO,&pre,&len);
+
+    // 设置连接超时时间
+    struct timeval timeo = {time_t(timeout),long(timeout*1000000)%1000000};
+    ::setsockopt(m_socket._socket(),SOL_SOCKET,SO_SNDTIMEO,&timeo,sizeof(timeo));
+
+    size_t max_try_time = trytime < _getMaxTryTime() ? trytime : _getMaxTryTime();
     size_t try_time = 0;			//如果不成功每隔一秒连接一次
     while (try_time < max_try_time && ::connect(m_socket._socket(), (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1){
         ++try_time;
@@ -51,6 +61,9 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t time)
         if(try_time != max_try_time)
             usleep(_getSleepTime());		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
     }
+
+    // 恢复之前的连接超时时间
+    ::setsockopt(m_socket._socket(),SOL_SOCKET,SO_SNDTIMEO,&pre,sizeof(pre));
 
     if(try_time == max_try_time)
         return false;

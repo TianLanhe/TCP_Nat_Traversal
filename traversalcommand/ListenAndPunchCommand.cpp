@@ -16,7 +16,7 @@ void ListenAndPunchCommand::punching(ListenAndPunchCommand *command, ClientSocke
 {
     while(command->shouldPunch){
         if(!socket->isConnected()){
-            socket->connect(destiny_ip,destiny_port,1);
+            socket->connect(destiny_ip,destiny_port);
         }else{	// 如果发生同时打开，连接上了，这里关闭 server socket 的读通道，且将 shouldPunch 置为 false
             command->shouldPunch = false;
             shutdown(serverFd,SHUT_RD);

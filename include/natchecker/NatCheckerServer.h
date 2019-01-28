@@ -8,6 +8,9 @@
 
 LIB_BEGIN
 
+#define STUN_MAIN_PORT 6666
+#define STUN_SECONDARY_PORT 8888
+
 struct Address{
     Address():port(0){ }
     Address(const Object::ip_type& ip, Object::port_type port):ip(ip),port(port){ }

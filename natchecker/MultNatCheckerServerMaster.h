@@ -1,9 +1,10 @@
-#ifndef STANDARD_NAT_CHECKER_SERVER_H
-#define STANDARD_NAT_CHECKER_SERVER_H
+#ifndef MULT_NAT_CHECKER_SERVER_MASTER_H
+#define MULT_NAT_CHECKER_SERVER_MASTER_H
 
-#include "../include/natchecker/NatCheckerServer.h"
+#include "include/natchecker/NatCheckerServer.h"
 
 #include <vector>
+#include <string>
 
 LIB_BEGIN
 
@@ -11,11 +12,11 @@ class ServerSocket;
 class ClientSocket;
 class DefaultClientSocket;
 
-class StandardNatCheckerServer : public NatCheckerServer
+class MultNatCheckerServerMaster : public NatCheckerServer
 {
 public:
-    StandardNatCheckerServer(const ip_type&, port_type, const ip_type&, port_type);
-    ~StandardNatCheckerServer();
+    MultNatCheckerServerMaster(port_type main_port = STUN_MAIN_PORT,port_type another_port = STUN_SECONDARY_PORT);
+    ~MultNatCheckerServerMaster();
 
     bool setListenNum(size_t);
 
@@ -28,11 +29,10 @@ protected:
     size_t _getMaxTryTime(){ return 3; }
     size_t _getConnectRetryTime(){ return 1; }
 
-private:
-    ServerSocket *m_main_server;
+protected:
+    std::string m_slaveIp;      // slave 的 IP
 
-    std::string m_another_addr;
-    std::string m_main_addr;
+    ServerSocket *m_server;
     port_type m_main_port;
     port_type m_another_port;
 
@@ -41,4 +41,4 @@ private:
 
 LIB_END
 
-#endif // STANDARD_NAT_CHECKER_SERVER_H
+#endif // MULT_NAT_CHECKER_SERVER_MASTER_H

@@ -67,7 +67,7 @@ bool NatCheckerClient::connect(const ip_type& addr, port_type port){
     ClientSocket *client = _getMainSocket();
 
 	// 连接到 STUN 服务器，与其进行交互获取 NAT 类型
-    if(!client->isConnected() && !client->connect(addr,port,1)){
+    if(!client->isConnected() && !client->connect(addr,port)){
         return false;
     }
 
@@ -134,7 +134,7 @@ bool NatCheckerClient::connect(const ip_type& addr, port_type port){
         port_type changePort = data.getInt(CHANGE_PORT);
 
         ClientSocket *c = ReuseSocketFactory::GetInstance()->GetClientSocket();
-        if(!c->bind(client->getAddr(),client->getPort()) || !c->connect(changeIp,changePort,1)){
+        if(!c->bind(client->getAddr(),client->getPort()) || !c->connect(changeIp,changePort)){
             delete c;
             return false;
         }/*else{

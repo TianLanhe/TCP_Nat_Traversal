@@ -46,7 +46,7 @@ void ListenAndPunchRandomlyCommand::punching(ListenAndPunchRandomlyCommand* comm
     vector<ClientSocket*>::size_type size = clients.size();
     while(command->shouldPunch){
         for(int i=0;i<size;++i){
-            if(clients[i]->connect(destiny_ip,destiny_port,1)){
+            if(clients[i]->connect(destiny_ip,destiny_port)){
                 ::shutdown(fd,SHUT_RD);
                 command->shouldPunch = false;
                 break;

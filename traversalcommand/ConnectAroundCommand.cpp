@@ -51,7 +51,7 @@ ClientSocket* ConnectAroundCommand::traverse(const TransmissionData &data, const
     sleep(CONNECT_SLEEP_TIME);
 	// 开始连接，一口气发出 try_time 个连接，然后调用 select 阻塞等待连接结果
     for(int count=0;count < try_time && count * delta <= MAX_PORT - destiny_port;++count){
-        if(sockets[count]->connect(destiny_ip.c_str(),destiny_port + count * delta,1)){	// 直接连接成功，不用后面的 select，直接返回该 socket
+        if(sockets[count]->connect(destiny_ip.c_str(),destiny_port + count * delta)){	// 直接连接成功，不用后面的 select，直接返回该 socket
             sockets[count]->setNonBlock(false);
             int fd = sockets[count]->_getfd();
             sockets[count]->_invalid();

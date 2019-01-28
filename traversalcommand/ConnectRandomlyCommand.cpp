@@ -89,7 +89,7 @@ ClientSocket* ConnectRandomlyCommand::traverse(const TransmissionData &data, con
         }while(find(ports.begin(),ports.end(),random_port) != ports.end());
         ports.push_back(random_port);
 
-        if(sockets[count]->connect(destiny_ip.c_str(),random_port,1)){	// 直接连接成功，不用后面的 select，直接返回该 socket
+        if(sockets[count]->connect(destiny_ip.c_str(),random_port)){	// 直接连接成功，不用后面的 select，直接返回该 socket
             sockets[count]->setNonBlock(false);
             int fd = sockets[count]->_getfd();
             sockets[count]->_invalid();

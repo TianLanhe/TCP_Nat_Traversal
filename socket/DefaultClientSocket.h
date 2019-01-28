@@ -31,7 +31,7 @@ public:
     virtual size_t read(char*,int);
     virtual size_t write(const char*,size_t);
 
-    virtual bool connect(const char*, port_type, size_t time = (size_t)(-1));
+    virtual bool connect(const char*, port_type, size_t trytime = 1, double timeout = 2.0);
 	virtual bool isConnected() const { return m_bHasConnect; }
 
     virtual bool setNonBlock(bool flag = true);
@@ -49,6 +49,7 @@ public:
 protected:
 
     size_t _getMaxTryTime() const { return 5; }
+    double _getMaxWaitTime() const { return 120.0; }
 
     size_t _getSleepTime() const { return 1 * 1000000; }
 

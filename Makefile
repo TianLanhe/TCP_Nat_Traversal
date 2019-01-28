@@ -8,7 +8,7 @@ BIN_PATH := bin
 # main 函数所在目录，会自动在前面加 "./" ，find 命令要求的
 MAIN_PATH := main
 
-DBG_ENABLE := 1
+DBG_ENABLE := 0
 LIBS := pthread
 LIBRARY_PATH := /lib
 INCLUDE_PATH := . include

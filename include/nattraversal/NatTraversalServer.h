@@ -19,8 +19,6 @@ template < typename T >
 class DefaultDataBase;
 
 #define SERVER_PORT 9999
-#define STUN_MAIN_PORT 6666
-#define STUN_SECONDARY_PORT 8888
 
 #define TIME_TO_WAIT_FOR_CHECKING_NAT_TYPE 3
 

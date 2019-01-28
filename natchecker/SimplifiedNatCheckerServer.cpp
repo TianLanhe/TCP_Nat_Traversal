@@ -147,8 +147,8 @@ void SimplifiedNatCheckerServer::handle_request(ClientSocket* client){
         string ext_ip2 = c->getPeerAddr();
         port_type ext_port2 = c->getPeerPort();
 
-        Log(INFO) << "ext_ip2: ",ext_ip2 << eol;
-        Log(INFO) << "ext_port2: ",ext_port2 << eol;
+        Log(INFO) << "ext_ip2: " << ext_ip2 << eol;
+        Log(INFO) << "ext_port2: " << ext_port2 << eol;
 
         // 假设 NAT 只有一个对外 IP 或 同一个内网主机向外通信时肯定会转换到同一个 IP (也许会改变端口)
         if(ext_ip2 != ext_ip)
@@ -175,7 +175,7 @@ void SimplifiedNatCheckerServer::handle_request(ClientSocket* client){
         }
         else	// 第2次的外网地址与第1次的不同，则是 Address And Port Dependent，进行多次连接预测增量
         {
-            int delta_pre = ext_port2 - ext_port - 1;
+            int delta_pre = 0;
             int delta_cur = ext_port2 - ext_port;
             size_t try_time = 0;
             port_type ext_port_pre = ext_port2;
