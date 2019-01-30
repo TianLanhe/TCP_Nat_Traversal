@@ -24,7 +24,7 @@ NatTraversalClient::~NatTraversalClient(){
 }
 
 bool NatTraversalClient::enroll(const ip_type& ip,port_type port){
-    if(!m_socket->connect(ip,port,1))
+    if(!m_socket->connect(ip,port))
         return false;
 
     TransmissionProxy proxy(m_socket);

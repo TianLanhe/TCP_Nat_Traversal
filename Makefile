@@ -1,4 +1,4 @@
-TARGET := client server
+TARGET := client server test testserver
 
 SOURCE_PATH := .
 # dep 目录不能加"./"，因为当 "./abc" 成为目标时， $@ 会变成 "abc"，在 patsubst 时会出问题

@@ -40,16 +40,8 @@ bool MultNatCheckerServerMaster::setListenNum(size_t num){
     if(!m_server)
         return false;
 
-    if(!m_server->isBound())
+    if(!m_server->isBound() || !m_server->bind(m_main_port))
         return false;
-
-    vector<string> ips = Util::getLocalIps();
-    if(ips.size() < 1)
-        return false;
-
-    if(!m_server->bind(ips[0],m_main_port)){
-        return false;
-    }
 
     return !m_server->isListen() && m_server->listen(num);
 }

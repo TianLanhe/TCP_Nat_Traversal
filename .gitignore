@@ -32,3 +32,6 @@
 *.app
 
 bin
+
+# Test
+main/test*.cpp
