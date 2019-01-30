@@ -40,7 +40,7 @@ bool MultNatCheckerServerMaster::setListenNum(size_t num){
     if(!m_server)
         return false;
 
-    if(!m_server->isBound() || !m_server->bind(m_main_port))
+    if(!m_server->isBound() && !m_server->bind(m_main_port))
         return false;
 
     return !m_server->isListen() && m_server->listen(num);

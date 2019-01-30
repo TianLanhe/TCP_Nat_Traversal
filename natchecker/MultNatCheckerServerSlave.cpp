@@ -27,13 +27,15 @@ bool MultNatCheckerServerSlave::setListenNum(size_t num){
     if(!m_server)
         return false;
 
-    if(!m_server->isBound() || !m_server->bind(m_port))
+    if(!m_server->isBound() && !m_server->bind(m_port))
         return false;
 
     return !m_server->isListen() && m_server->listen(num);
 }
 
 void MultNatCheckerServerSlave::handle_request(ClientSocket* client){
+    Log(INFO) << "master checker server has connected: " << client->getPeerAddr() << ":" << client->getPeerPort() << eol;
+
     TransmissionProxy proxy(client);
     TransmissionData data = proxy.read();
 
@@ -50,7 +52,7 @@ void MultNatCheckerServerSlave::handle_request(ClientSocket* client){
     if(checkType == CHECK_MAPPING){
         // PRE_IP 和 PRE_PORT 用于 slave 判断其 Mapping 类型，然后由 slave 返回给 NAT 其 Mapping 类型
         if(!data.isMember(BIND_PORT) || !data.isMember(PRE_IP) || !data.isMember(PRE_PORT)){
-            Log(ERROR) << "data have no member \"BIND_PORT\" \"PRE_IP\" \"PRE_PORT\" : " << data.isMember(BIND_PORT) << data.isMember(PRE_IP) << data.isMember(PRE_PORT) << eol;
+            Log(ERROR) << "data have no member \"BIND_PORT\" \"PRE_IP\" \"PRE_PORT\" : " << data.isMember(BIND_PORT) << " " << data.isMember(PRE_IP) << " " << data.isMember(PRE_PORT) << eol;
             return;
         }
 
@@ -124,7 +126,7 @@ void MultNatCheckerServerSlave::handle_request(ClientSocket* client){
         delete s;
     }else if(checkType == CHECK_FILTERING){
         if(!data.isMember(BIND_PORT) || !data.isMember(CONNECT_IP) || !data.isMember(CONNECT_PORT)){
-            Log(ERROR) << "data have no member \"BIND_PORT\" \"CONNECT_IP\" \"CONNECT_PORT\" : " << data.isMember(BIND_PORT) << data.isMember(CONNECT_IP) << data.isMember(CONNECT_PORT) << eol;
+            Log(ERROR) << "data have no member \"BIND_PORT\" \"CONNECT_IP\" \"CONNECT_PORT\" : " << data.isMember(BIND_PORT) << " " << data.isMember(CONNECT_IP) << " " << data.isMember(CONNECT_PORT) << eol;
             return;
         }
 
