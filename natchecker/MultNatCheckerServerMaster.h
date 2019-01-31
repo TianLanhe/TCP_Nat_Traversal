@@ -23,6 +23,8 @@ public:
     // this function will run forever, you should call this function in a new thread
     void waitForClient();
 
+    void setSlave(const std::string& slaveIp) { m_slaveIp = slaveIp; }
+
 protected:
     void handle_request(ClientSocket*);
 

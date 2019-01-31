@@ -126,12 +126,18 @@ bool NatCheckerClient::connect(const ip_type& addr, port_type port){
 	// STUN 服务器表示不用继续了，已经探测出 Map 类型以及端口递增规律了，则发送探测标志为假的返回信息通知客户端停止
 	// 若需要继续连接，返回信息包括：需要继续探测的标志、需要进行连接的下一个地址
 	// 若停止连接，完成探测，返回信息包括：不需要继续探测的标志、NAT 的 Map 类型，但端口递增规律对客户端透明，只有 STUN 服务器知道
+    ip_type preIp = addr;
+    port_type prePort = port;
     while(continued){
-        if(!data.isMember(CHANGE_IP) || !data.isMember(CHANGE_PORT))
+        // 允许不传 CHANGE_IP 和 CHANGE_PORT，如果没有这两个参数，则使用上次连接用的 IP 或 Port
+        /*if(!data.isMember(CHANGE_IP) || !data.isMember(CHANGE_PORT))
             return false;
 
         ip_type changeIp = data.getString(CHANGE_IP);
-        port_type changePort = data.getInt(CHANGE_PORT);
+        port_type changePort = data.getInt(CHANGE_PORT);*/
+
+        ip_type changeIp = (data.isMember(CHANGE_IP) ? data.getString(CHANGE_IP) : preIp);
+        port_type changePort = (data.isMember(CHANGE_PORT) ? data.getInt(CHANGE_PORT) : prePort);
 
         ClientSocket *c = ReuseSocketFactory::GetInstance()->GetClientSocket();
         if(!c->bind(client->getAddr(),client->getPort()) || !c->connect(changeIp,changePort)){
@@ -152,6 +158,9 @@ bool NatCheckerClient::connect(const ip_type& addr, port_type port){
         delete c;
 
         continued = data.getBool(CONTINUE);
+
+        preIp = changeIp;
+        prePort = changePort;
     }
 
     if(!data.isMember(MAP_TYPE))
