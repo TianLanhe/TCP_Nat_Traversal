@@ -31,7 +31,7 @@ public:
 	virtual bool listen(int);
 	virtual bool isListen() const { return m_bIsListen; }
 
-	virtual ClientSocket* accept();
+    virtual ClientSocket* accept(double timeout = -1.0);    // 默认无限期等待，可设置超时时间
 
 	virtual port_type getPort() const { return m_socket._port(); }
     virtual ip_type getAddr() const { return m_socket._addr(); }

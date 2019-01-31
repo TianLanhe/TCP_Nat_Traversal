@@ -13,7 +13,7 @@ public:
 	virtual bool listen(int) = 0;
 	virtual bool isListen() const = 0;
 
-	virtual ClientSocket* accept() = 0;
+    virtual ClientSocket* accept(double timeout = -1.0) = 0;
 };
 
 LIB_END
