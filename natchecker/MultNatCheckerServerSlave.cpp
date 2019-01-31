@@ -73,7 +73,7 @@ void MultNatCheckerServerSlave::handle_request(ClientSocket* client){
         }
 
         // 等待 NAT 连接
-        ClientSocket *c = s->accept();
+        ClientSocket *c = s->accept(DEFAULT_ACCEPT_TIMEOUT);
         if(c == NULL){
             Log(ERROR) << "server socket accept error" << eol;
             delete s;

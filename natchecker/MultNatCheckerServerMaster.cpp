@@ -176,7 +176,7 @@ void MultNatCheckerServerMaster::handle_request(ClientSocket* client){
         }
 
         Log(INFO) << "wait for client to connect " << s->getAddr() << ":" << s->getPort() << " to detect the mapping type" << eol;
-        c.reset(s->accept());
+        c.reset(s->accept(DEFAULT_ACCEPT_TIMEOUT));
 
         if(c.get() == NULL){
             Log(ERROR) << "server accept at " << s->getAddr() << ":" << s->getPort() << " error" << eol;
@@ -192,6 +192,8 @@ void MultNatCheckerServerMaster::handle_request(ClientSocket* client){
         if(ext_ip2 != ext_ip){
             Log(WARN) << "The NAT allocate the different global IP to the same host" << eol;
         }
+
+        s->close();
 
         if(ext_ip2 == ext_ip && ext_port2 == ext_port) // 第2次的外网地址与第1次的相同
         {

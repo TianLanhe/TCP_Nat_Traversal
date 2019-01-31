@@ -5,6 +5,9 @@
 
 LIB_BEGIN
 
+#define DEFAULT_LISTEN_NUM 10
+#define DEFAULT_ACCEPT_TIMEOUT 1.0
+
 class ClientSocket;
 
 class ServerSocket : public Socket
