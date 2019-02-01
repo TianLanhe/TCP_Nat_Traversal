@@ -41,7 +41,7 @@ bool NatTraversalServer::init(const ip_type& main_ip,NatCheckerServer *checker_s
     m_socket = new DefaultServerSocket();
     CHECK_NO_MEMORY_EXCEPTION(m_socket);
 
-    if(!m_socket->bind(m_main_ip,SERVER_PORT) || !m_socket->listen(DEFAULT_LISTEN_NUM)){
+    if(!m_socket->bind(SERVER_PORT) || !m_socket->listen(DEFAULT_LISTEN_NUM)){
         delete m_socket;
         m_socket = NULL;
         return false;
