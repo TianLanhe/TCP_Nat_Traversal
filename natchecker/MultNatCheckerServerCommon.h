@@ -7,6 +7,8 @@
 #define CHECK_FILTERING "checkFiltering"
 #define CHECK_MAPPING "checkMapping"
 
+#define READY "ready"
+
 #define BIND_PORT "bindPort"
 
 #define CAN_CONNECT "canConnect"

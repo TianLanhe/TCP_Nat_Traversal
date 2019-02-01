@@ -4,6 +4,7 @@
 #include "include/socket/ClientSocket.h"
 #include "include/transmission/TransmissionData.h"
 #include "include/transmission/TransmissionProxy.h"
+#include "include/SmartPointer.h"
 #include "include/Log.h"
 #include "include/NatType.h"
 
@@ -60,23 +61,29 @@ void MultNatCheckerServerSlave::handle_request(ClientSocket* client){
         ip_type pre_ip = data.getString(PRE_IP);
         port_type pre_port = data.getInt(PRE_PORT);
 
-        ServerSocket *s = ReuseSocketFactory::GetInstance()->GetServerSocket();
-        if(!s){
+        SmartPointer<ServerSocket> s(ReuseSocketFactory::GetInstance()->GetServerSocket());
+        if(s.get() == NULL){
             Log(ERROR) << "create server socket error" << eol;
             return;
         }
 
         if(!s->bind(bind_port) || !s->listen(DEFAULT_LISTEN_NUM)){
             Log(ERROR) << "server socket bind(" << bind_port << ") or listen error" << eol;
-            delete s;
+            return;
+        }
+
+        // 监听好了，向 Master 返回 READY
+        data.clear();
+        data.add(READY,true);
+        if(!proxy.write(data)){
+            Log(ERROR) << "write data to master error" << eol;
             return;
         }
 
         // 等待 NAT 连接
-        ClientSocket *c = s->accept(DEFAULT_ACCEPT_TIMEOUT);
-        if(c == NULL){
+        SmartPointer<ClientSocket> c(s->accept(DEFAULT_ACCEPT_TIMEOUT));
+        if(c.get() == NULL){
             Log(ERROR) << "server socket accept error" << eol;
-            delete s;
             return;
         }
 
@@ -104,8 +111,6 @@ void MultNatCheckerServerSlave::handle_request(ClientSocket* client){
 
         if(!proxy.write(data)){
             Log(ERROR) << "write data to master error" << eol;
-            delete c;
-            delete s;
             return;
         }
 
@@ -114,16 +119,11 @@ void MultNatCheckerServerSlave::handle_request(ClientSocket* client){
         data.add(MAP_TYPE,mapType);
         data.add(CONTINUE,false);
 
-        proxy.setSocket(c);
+        proxy.setSocket(c.get());
         if(!proxy.write(data)){
             Log(ERROR) << "write data to nat client error" << eol;
-            delete c;
-            delete s;
             return;
         }
-
-        delete c;
-        delete s;
     }else if(checkType == CHECK_FILTERING){
         if(!data.isMember(BIND_PORT) || !data.isMember(CONNECT_IP) || !data.isMember(CONNECT_PORT)){
             Log(ERROR) << "data have no member \"BIND_PORT\" \"CONNECT_IP\" \"CONNECT_PORT\" : " << data.isMember(BIND_PORT) << " " << data.isMember(CONNECT_IP) << " " << data.isMember(CONNECT_PORT) << eol;

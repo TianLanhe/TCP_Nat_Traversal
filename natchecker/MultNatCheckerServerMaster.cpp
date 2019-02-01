@@ -217,6 +217,13 @@ void MultNatCheckerServerMaster::handle_request(ClientSocket* client){
                 return;
             }
 
+            // 这里等待 Slave 返回准备好的信息，同步操作，如果异步发送给 Slave 指令然后立即让 NAT 连接 Slave 的话，可能 Slave 没准备好监听，导致 NAT 连接失败
+            data = proxy.read();
+            if(!(data.isMember(READY) && data.getBool(READY) == true)){
+                Log(ERROR) << "response from slave is error, data.isMember(READY)=" << data.isMember(READY) << eol;
+                return;
+            }
+
             // Master 向 Slave 发送指令后，让 NAT 往 Slave 进行连接，然后等待 Slave 的结果
             data.clear();
             data.add(CONTINUE,true);

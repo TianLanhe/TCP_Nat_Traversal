@@ -1,6 +1,8 @@
 #include "natchecker/MultNatCheckerServerMaster.h"
 #include <iostream>
-#include "include/database/DataBase.h"
+#include "database/DefaultDataBase.h"
+
+using namespace Lib;
 
 int main(int argc,char *argv[]){
     if(argc < 2){
