@@ -37,8 +37,13 @@ int main(int argc,char *argv[]){
 
     NatTraversalClient client(argv[1]);
 	
-    short port = atoi(argv[2]);
-    if(!client.enroll(argv[1],port)){
+    short port;
+    if(argc >= 4){
+        port = atoi(argv[3]);
+    }else{
+        port = 9999;
+    }
+    if(!client.enroll(argv[2],port)){
         cerr << "client enroll to traversal server failed" << endl;
 		return 1;
     }
@@ -48,15 +53,17 @@ int main(int argc,char *argv[]){
     thread(func).detach();
 	
     while(1){
-        ClientSocket *socket = client.connectToPeerHost("client2");
+        string identify;
+        cout << "Please input the client to connect:";
+        cin >> identify;
+        ClientSocket *socket = client.connectToPeerHost(identify);
 
         if(socket == NULL){
             cout << "connectToPeerHost return NULL" << endl;
-            return 0;
+        }else{
+            echoSocketAddr(socket);
+            delete socket;
         }
-
-        echoSocketAddr(socket);
-        delete socket;
     }
 
     return 0;
