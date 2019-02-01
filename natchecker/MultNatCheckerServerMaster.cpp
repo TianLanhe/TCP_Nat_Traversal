@@ -348,9 +348,8 @@ void MultNatCheckerServerMaster::waitForClient(){
     SmartPointer<SocketSelector> selector(SocketSelectorFactory::GetInstance()->GetReadSelector());
     ClientSocket *client;
     ServerSocket *server;
+    selector->add(m_server); // 1个server socket
     while(1){
-        selector->add(m_server); // 1个server socket
-
         vector<Socket*> sockets = selector->select();
 
         for (vector<Socket*>::size_type i=0;i<sockets.size();++i) {
