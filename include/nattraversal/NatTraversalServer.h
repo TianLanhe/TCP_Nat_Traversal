@@ -75,7 +75,7 @@ private:
 
     DefaultDataBase<DataRecord> *m_database;
 
-    ip_type m_main_ip;
+    ip_type m_main_ip;  // NAT 类型检测服务器的 IP
 
     UserManager* m_user_manager;
 

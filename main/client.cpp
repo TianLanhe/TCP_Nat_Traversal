@@ -30,24 +30,34 @@ void func(){
 }
 
 int main(int argc,char *argv[]){
-    NatTraversalClient client("client2");
+    if(argc < 3){
+        cout << "Usage: " << argv[0] << " <Identify> <ServerIP> [ServerPort]" << endl;
+        return 1;
+    }
+
+    NatTraversalClient client(argv[1]);
 	
-    if(!client.enroll("192.168.43.137",9999))
+    short port = atoi(argv[2]);
+    if(!client.enroll(argv[1],port)){
+        cerr << "client enroll to traversal server failed" << endl;
 		return 1;
+    }
 		
-    //ext_client = &client;
+    ext_client = &client;
 	
-    //thread(func).detach();
+    thread(func).detach();
 	
-    //ClientSocket *socket = client.connectToPeerHost("client2");
-    ClientSocket *socket = client.waitForPeerHost();
-	
-	if(socket == NULL){
-		cout << "connectToPeerHost return NULL" << endl;
-		return 0;
-	}
-	
-	echoSocketAddr(socket);
+    while(1){
+        ClientSocket *socket = client.connectToPeerHost("client2");
+
+        if(socket == NULL){
+            cout << "connectToPeerHost return NULL" << endl;
+            return 0;
+        }
+
+        echoSocketAddr(socket);
+        delete socket;
+    }
 
     return 0;
 }
