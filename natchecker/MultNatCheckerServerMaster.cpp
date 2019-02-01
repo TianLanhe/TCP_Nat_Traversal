@@ -1,17 +1,16 @@
-#include "natchecker/MultNatCheckerServerMaster.h"
-#include "natchecker/MultNatCheckerServerCommon.h"
+#include "MultNatCheckerServerMaster.h"
+#include "MultNatCheckerServerCommon.h"
 #include "include/socket/ReuseSocketFactory.h"
 #include "include/socket/ServerSocket.h"
 #include "include/socket/ClientSocket.h"
-#include "socket/DefaultClientSocket.h"
-#include "socket/DefaultServerSocket.h"
 #include "include/transmission/TransmissionData.h"
 #include "include/transmission/TransmissionProxy.h"
 #include "include/database/DataBase.h"
 #include "include/Log.h"
 #include "include/SmartPointer.h"
+#include "include/socket/SocketSelector.h"
+#include "include/socket/SocketSelectorFactory.h"
 
-#include <sys/select.h>
 #include <errno.h>
 
 #include <thread>
@@ -31,9 +30,6 @@ MultNatCheckerServerMaster::MultNatCheckerServerMaster(port_type main_port,port_
 MultNatCheckerServerMaster::~MultNatCheckerServerMaster(){
     if(m_server)
         delete m_server;
-
-    for(vector<DefaultClientSocket>::size_type i=0;i<m_clientVec.size();++i)
-        delete m_clientVec[i];
 }
 
 bool MultNatCheckerServerMaster::setListenNum(size_t num){
@@ -349,7 +345,42 @@ void MultNatCheckerServerMaster::waitForClient(){
     }*/
     // 由于不能立即删了第一次连接的 client，故这里采用 I/O 多路转接的方式，能够监听到 client 断开连接的情况，由客户端主动断开
 
-    DefaultServerSocket *m_socket = dynamic_cast<DefaultServerSocket*>(m_server);
+    SmartPointer<SocketSelector> selector(SocketSelectorFactory::GetInstance()->GetReadSelector());
+    ClientSocket *client;
+    ServerSocket *server;
+    while(1){
+        selector->add(m_server); // 1个server socket
+
+        vector<Socket*> sockets = selector->select();
+
+        for (vector<Socket*>::size_type i=0;i<sockets.size();++i) {
+            if((server = dynamic_cast<ServerSocket*>(sockets[i]))){
+                client = server->accept();
+                Log(INFO) << "Client \"" << client->getPeerAddr() << ':' << client->getPeerPort() << "\" connect" << eol;
+
+                selector->add(client);
+
+                handle_request(client);
+
+                client = NULL;
+                server = NULL;
+            }else if((client = dynamic_cast<ClientSocket*>(sockets[i]))){
+                string content = client->read();
+                CHECK_STATE_EXCEPTION(content.empty());
+
+                Log(INFO) << "Client \"" << client->getPeerAddr() << ':' << client->getPeerPort() << "\" disconnect" << eol;
+
+                selector->remove(client);
+
+                delete client;
+                client = NULL;
+            }else{
+                THROW_EXCEPTION(ErrorStateException,"socket type error");
+            }
+        }
+    }
+
+    /*DefaultServerSocket *m_socket = dynamic_cast<DefaultServerSocket*>(m_server);
     CHECK_STATE_EXCEPTION(m_socket);
 
     fd_set set;
@@ -421,5 +452,5 @@ void MultNatCheckerServerMaster::waitForClient(){
                 }
             }
         }
-    }
+    }*/
 }

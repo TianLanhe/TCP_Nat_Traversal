@@ -7,6 +7,8 @@
 
 LIB_BEGIN
 
+#define DEFAULT_READ_BYTE 512
+
 class Socket : public Object
 {
 public:
@@ -28,7 +30,7 @@ public:
     virtual bool bind(port_type) = 0;                       // 服务器绑定时可以不指定地址，所有发到本机任意ip指定port的包都能收到
 	virtual bool isBound() const = 0;
 
-	virtual std::string read(int) = 0;
+    virtual std::string read(int readbyte = DEFAULT_READ_BYTE) = 0;
     virtual size_t write(const std::string& str) { return write(str.c_str()); }
     virtual size_t write(const char*) = 0;
 

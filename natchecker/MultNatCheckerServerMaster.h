@@ -3,14 +3,12 @@
 
 #include "include/natchecker/NatCheckerServer.h"
 
-#include <vector>
 #include <string>
 
 LIB_BEGIN
 
 class ServerSocket;
 class ClientSocket;
-class DefaultClientSocket;
 
 class MultNatCheckerServerMaster : public NatCheckerServer
 {
@@ -37,8 +35,6 @@ protected:
     ServerSocket *m_server;
     port_type m_main_port;
     port_type m_another_port;
-
-    std::vector<DefaultClientSocket*> m_clientVec;
 };
 
 LIB_END

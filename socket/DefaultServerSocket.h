@@ -6,8 +6,6 @@
 
 LIB_BEGIN
 
-#define DEFAULT_READ_BYTE 512
-
 class DefaultServerSocket : public ServerSocket {
 public:
 	DefaultServerSocket() :m_bIsListen(false) { }
