@@ -286,7 +286,7 @@ void MultNatCheckerServerMaster::handle_request(ClientSocket* client){
                 data.add(CHANGE_PORT,m_another_port + (port_type)(try_time));
 
                 if(!(s->reopen() &&
-                        s->bind(m_another_port + try_time) &&
+                        s->bind(m_another_port + (port_type)(try_time)) &&
                         s->listen(DEFAULT_LISTEN_NUM))){
                     Log(ERROR) << "server socket list at " << s->getAddr() << ":" << s->getPort() + try_time << " error" << eol;
                     return;
@@ -295,7 +295,7 @@ void MultNatCheckerServerMaster::handle_request(ClientSocket* client){
                 proxy.setSocket(c.get());
                 proxy.write(data);
 
-                c.reset(s->accept());
+                c.reset(s->accept(DEFAULT_ACCEPT_TIMEOUT));
                 if(c.get() == NULL){
                     Log(ERROR) << "server accept at " << s->getAddr() << ":" << s->getPort() << " error" << eol;
                     return;
