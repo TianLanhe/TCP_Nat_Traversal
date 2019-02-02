@@ -1,5 +1,8 @@
 TARGET := client server natcheckerclient testserver master slave testslave testclient
 
+# 设置 shell，否则 echo -e 会出问题
+SHELL=/bin/bash
+
 SOURCE_PATH := .
 # dep 目录不能加"./"，因为当 "./abc" 成为目标时， $@ 会变成 "abc"，在 patsubst 时会出问题
 DEP_PATH := dep
@@ -51,6 +54,7 @@ $(TARGET_FILES) : $(BIN_PATH)/% : $(filter-out $(OBJ_PATH)/$(MAIN_PATH)/%.o, $(O
 $(DEP_PATH)/%.d : $(SOURCE_PATH)/%.cpp
 	@echo Generating $@... ;	\
 	mkdir -p $(dir $@);		\
+	set -e;	\
 	rm -f $@; \
 	$(CXX) $(CXXFLAGS) -E -MM  $< > $@.temp; \
 	sed 's,.*:,$@ :,g' < $@.temp > $@;	\
