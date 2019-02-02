@@ -49,7 +49,7 @@ $(TARGET) : % : $(BIN_PATH)/%
 
 $(TARGET_FILES) : $(BIN_PATH)/% : $(filter-out $(OBJ_PATH)/$(MAIN_PATH)/%.o, $(OBJ_FILES)) $(OBJ_PATH)/$(MAIN_PATH)/%.o
 	@mkdir -p $(BIN_PATH)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) 
 
 $(DEP_PATH)/%.d : $(SOURCE_PATH)/%.cpp
 	@echo Generating $@... ;	\
