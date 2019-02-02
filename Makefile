@@ -51,7 +51,6 @@ $(TARGET_FILES) : $(BIN_PATH)/% : $(filter-out $(OBJ_PATH)/$(MAIN_PATH)/%.o, $(O
 $(DEP_PATH)/%.d : $(SOURCE_PATH)/%.cpp
 	@echo Generating $@... ;	\
 	mkdir -p $(dir $@);		\
-	set -e;	\
 	rm -f $@; \
 	$(CXX) $(CXXFLAGS) -E -MM  $< > $@.temp; \
 	sed 's,.*:,$@ :,g' < $@.temp > $@;	\
