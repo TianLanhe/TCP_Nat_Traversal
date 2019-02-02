@@ -1,13 +1,17 @@
 #include "ListenDirectlyCommand.h"
-#include "../include/socket/ClientSocket.h"
-#include "../include/socket/ReuseSocketFactory.h"
-#include "../include/socket/ServerSocket.h"
-#include "../include/SmartPointer.h"
-#include "../socket/ReuseServerSocket.h"
+#include "include/socket/ClientSocket.h"
+#include "include/socket/ReuseSocketFactory.h"
+#include "include/socket/ServerSocket.h"
+#include "include/SmartPointer.h"
+#include "include/socket/SocketSelector.h"
+#include "include/socket/SocketSelectorFactory.h"
+
+#include <vector>
 
 #include <sys/select.h>
 
 using namespace Lib;
+using namespace std;
 
 ClientSocket* ListenDirectlyCommand::traverse(const TransmissionData &data, const ip_type &ip, port_type port)
 {
@@ -16,31 +20,20 @@ ClientSocket* ListenDirectlyCommand::traverse(const TransmissionData &data, cons
 
     SmartPointer<ServerSocket> server(ReuseSocketFactory::GetInstance()->GetServerSocket());
 
-    if(!server->bind(ip,port))
+    if(!server->bind(ip,port) || !server->listen(LISTEN_NUMBER))
         return NULL;
 
-    if(!server->listen(LISTEN_NUMBER))
+    SmartPointer<SocketSelector> selector(SocketSelectorFactory::GetInstance()->GetReadSelector());
+    selector->add(server.get());
+
+    vector<Socket*> vecSockets = selector->select(SELECT_WAIT_TIME_DOUBLE);
+    if(vecSockets.empty())
         return NULL;
+    else{
+        CHECK_STATE_EXCEPTION(vecSockets.size() == 1);
 
-    ReuseServerSocket *reuseSocket = dynamic_cast<ReuseServerSocket*>(server.get());
-    if(reuseSocket == NULL)
-        return NULL;
+        ServerSocket *s = dynamic_cast<ServerSocket*>(vecSockets[0]);
 
-    struct timeval t = SELECT_WAIT_TIME;
-    fd_set set;
-    FD_ZERO(&set);
-    FD_SET(reuseSocket->_getfd(),&set);
-    int ret = select(reuseSocket->_getfd()+1,&set,NULL,NULL,&t);
-
-    if(ret == -1){
-        THROW_EXCEPTION(ErrorStateException,"select error in NatTraversalServer::waitForClient");
-    }else if(ret == 0){
-        return NULL;
-    }else{
-        CHECK_STATE_EXCEPTION(ret == 1);
-
-        ClientSocket *client = server->accept();
-
-        return client;
+        return s->accept();
     }
 }

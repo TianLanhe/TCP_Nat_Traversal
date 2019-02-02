@@ -23,6 +23,7 @@ LIB_BEGIN
 #define CONNECT_SLEEP_TIME 0.5
 #define PUNCHING_INTEVAL 0.5
 #define SELECT_WAIT_TIME { 5,0 }
+#define SELECT_WAIT_TIME_DOUBLE 5.0
 #define LISTEN_NUMBER 1
 
 class ClientSocket;
