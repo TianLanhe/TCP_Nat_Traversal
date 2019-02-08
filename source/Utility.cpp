@@ -16,7 +16,7 @@ using namespace Lib::Util;
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <ctime>
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
 #endif
 
@@ -53,7 +53,7 @@ vector<string> Util::getLocalIps(){
 int initRandSeed(){
 #if defined(_WIN32) || defined(_WIN64)
 	srand(time(NULL));
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
     struct timeval tv;
     gettimeofday(&tv,NULL);
     srand(tv.tv_usec);

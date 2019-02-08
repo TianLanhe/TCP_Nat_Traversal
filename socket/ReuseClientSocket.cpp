@@ -2,7 +2,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <winsock.h>
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/socket.h>
 #endif
 

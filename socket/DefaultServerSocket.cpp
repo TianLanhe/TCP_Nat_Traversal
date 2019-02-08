@@ -4,7 +4,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 typedef int socklen_t;
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

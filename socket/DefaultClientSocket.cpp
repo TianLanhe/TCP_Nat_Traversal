@@ -3,7 +3,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 typedef int socklen_t;
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -66,7 +66,7 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t tryti
 		if (try_time != max_try_time)
 #if defined(_WIN32) || defined(_WIN64)
 			Sleep(_getSleepTime() / 1000);
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
             usleep(_getSleepTime());		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
 #endif
 	}
@@ -90,7 +90,7 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t tryti
 bool DefaultClientSocket::setNonBlock(bool flag){
 #if defined(_WIN32) || defined(_WIN64)
 	return true;
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
     int f = fcntl(m_socket._socket(),F_GETFL,0);
 
     if(f < 0){

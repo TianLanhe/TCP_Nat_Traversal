@@ -5,6 +5,12 @@
 
 #include <vector>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <WinSock2.h>
+#elif defined(__linux__) || defined(__APPLE__)
+#include <sys/select.h>
+#endif
+
 LIB_BEGIN
 
 class Socket;

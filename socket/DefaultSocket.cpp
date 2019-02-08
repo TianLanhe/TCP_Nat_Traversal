@@ -3,7 +3,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 typedef int socklen_t;
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -52,7 +52,7 @@ bool DefaultSocket::close()
 
 #if defined(_WIN32) || defined(_WIN64)
 	int r = ::closesocket(m_socket);
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 	int r = ::close(m_socket);
 #endif
 
@@ -75,7 +75,7 @@ string DefaultSocket::read(int read_byte)
 
 #if defined(_WIN32) || defined(_WIN64)
 	size_t b = ::recv(m_socket, content, read_byte, 0);
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 	size_t b = ::read(m_socket, content, read_byte);
 #endif
 
@@ -95,7 +95,7 @@ size_t DefaultSocket::write(const char* content)
 
 #if defined(_WIN32) || defined(_WIN64)
 	int write_byte = ::send(m_socket, content, strlen(content),0);
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 	int write_byte = ::write(m_socket, content, strlen(content));
 #endif
 
@@ -109,7 +109,7 @@ size_t DefaultSocket::read(char *buffer, int read_byte)
 
 #if defined(_WIN32) || defined(_WIN64)
 	return ::recv(m_socket, buffer, read_byte, 0);
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 	return ::read(m_socket, buffer, read_byte);
 #endif
 }
@@ -121,7 +121,7 @@ size_t DefaultSocket::write(const char * buffer, size_t size)
 
 #if defined(_WIN32) || defined(_WIN64)
 	return ::send(m_socket, buffer, size, 0);
-#elif defined(linux) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
 	return ::write(m_socket, buffer, size);
 #endif
 }
