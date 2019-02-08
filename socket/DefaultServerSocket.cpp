@@ -1,10 +1,15 @@
 #include "DefaultServerSocket.h"
 #include "DefaultClientSocket.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <WinSock2.h>
+typedef int socklen_t;
+#elif defined(linux) || defined(__APPLE__)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#endif
 #include <cstring>
 #include <cmath>
 
@@ -79,17 +84,17 @@ ClientSocket* DefaultServerSocket::accept(double timeout)
     if(fabs(timeout+1.0) > 1e-5){   // timeout != -1
         // 获取之前的设置，一会用于恢复
         socklen_t len;
-        ::getsockopt(m_socket._socket(),SOL_SOCKET,SO_RCVTIMEO,&pre,&len);
+        ::getsockopt(m_socket._socket(),SOL_SOCKET,SO_RCVTIMEO,(char*)&pre,&len);
 
         // 设置连接超时时间
         struct timeval timeo = {time_t(timeout),long(timeout*1000000)%1000000};
-        ::setsockopt(m_socket._socket(),SOL_SOCKET,SO_RCVTIMEO,&timeo,sizeof(timeo));
+        ::setsockopt(m_socket._socket(),SOL_SOCKET,SO_RCVTIMEO,(const char*)&timeo,sizeof(timeo));
     }
 
     int client_socket = ::accept(m_socket._socket(), NULL, NULL);
 
     if(fabs(timeout+1.0) > 1e-5){   // timeout != -1
-        ::setsockopt(m_socket._socket(),SOL_SOCKET,SO_RCVTIMEO,&pre,sizeof(pre));
+        ::setsockopt(m_socket._socket(),SOL_SOCKET,SO_RCVTIMEO, (const char*)&pre,sizeof(pre));
     }
 
     return (client_socket == -1 ? NULL : new DefaultClientSocket(client_socket,m_socket._addr(),m_socket._port()));

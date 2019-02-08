@@ -6,7 +6,11 @@
 #include <string>
 #include <cstring>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <winsock.h>
+#elif defined(linux) || defined(__APPLE__)
 #include <arpa/inet.h>
+#endif
 
 using namespace std;
 using namespace Lib;

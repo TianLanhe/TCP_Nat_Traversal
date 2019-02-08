@@ -15,6 +15,7 @@ namespace Lib {
 
 		void swap(SmartPointer<T>& sp);
         void reset(T* p = NULL);
+		T* detach();	// 将指针对象取出来，若计数器为0不会释放对象
 
 		T* get() const { return m_pointer; }
 		size_t use_count() const { return m_counter ? *m_counter : 0; }
@@ -85,6 +86,21 @@ namespace Lib {
     void SmartPointer<T>::reset(T* p) {
 		_release();
 		_attach(p);
+	}
+
+	template<typename T>
+	T* SmartPointer<T>::detach() {
+		T* ret = m_pointer;
+		if (m_pointer) {
+			--*m_counter;
+			if (*m_counter == 0) {
+				//delete m_pointer;
+				delete m_counter;
+			}
+			m_pointer = NULL;
+			m_counter = NULL;
+		}
+		return ret;
 	}
 
 	template<typename T>

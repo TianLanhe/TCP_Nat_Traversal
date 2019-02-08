@@ -12,13 +12,16 @@ class Socket;
 class SocketSelector : public Object
 {
 public:
+    typedef std::vector<Socket*> SocketVector;
+
+public:
 
     bool add(Socket*);
     bool remove(Socket*);
     bool has(Socket*);
     void clear() { m_sockets.clear(); }
 
-    virtual std::vector<Socket*> select(double timeout = 0.0);
+    virtual SocketVector select(double timeout = 0.0);
 
     size_t size() const { return m_sockets.size(); }
     bool empty() const { return m_sockets.empty(); }

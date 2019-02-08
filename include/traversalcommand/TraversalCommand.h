@@ -1,9 +1,9 @@
 #ifndef TRAVERSAL_COMMAND_H
 #define TRAVERSAL_COMMAND_H
 
-#include "../Object.h"
-#include "../NatType.h"
-#include "../transmission/TransmissionData.h"
+#include "include/Object.h"
+#include "include/NatType.h"
+#include "include/transmission/TransmissionData.h"
 
 #include <vector>
 

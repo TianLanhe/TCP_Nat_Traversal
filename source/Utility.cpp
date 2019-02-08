@@ -7,18 +7,23 @@ using namespace std;
 using namespace Lib;
 using namespace Lib::Util;
 
-#include <sys/ioctl.h>
+/*#include <sys/ioctl.h>
 #include <net/if.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <unistd.h>*/
 #include <stdio.h>
 
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <ctime>
+#elif defined(linux) || defined(__APPLE__)
 #include <sys/time.h>
+#endif
 
 vector<string> Util::getLocalIps(){
     vector<string> ret;
 
-    int s = socket(PF_INET, SOCK_DGRAM, 0);
+	/*int s = socket(PF_INET, SOCK_DGRAM, 0);
 
     struct ifconf conf;
     char buff[BUFSIZ];
@@ -41,14 +46,18 @@ vector<string> Util::getLocalIps(){
             ret.push_back(string(inet_ntoa(sin->sin_addr)));
     }
 
-    ::close(s);
+    ::close(s);*/
     return ret;
 }
 
 int initRandSeed(){
+#if defined(_WIN32) || defined(_WIN64)
+	srand(time(NULL));
+#elif defined(linux) || defined(__APPLE__)
     struct timeval tv;
     gettimeofday(&tv,NULL);
     srand(tv.tv_usec);
+#endif
     return 0;
 }
 

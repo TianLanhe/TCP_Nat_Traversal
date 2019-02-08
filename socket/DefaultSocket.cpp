@@ -1,9 +1,14 @@
 #include "DefaultSocket.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <WinSock2.h>
+typedef int socklen_t;
+#elif defined(linux) || defined(__APPLE__)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#endif
 #include <cstring>
 #include <cstdlib>
 
@@ -21,14 +26,14 @@ DefaultSocket::DefaultSocket(int socket)
 	}
 }
 
-DefaultSocket::DefaultSocket(int socket,const ip_type& addr,port_type port){
-    invalid();
+DefaultSocket::DefaultSocket(int socket, const ip_type& addr, port_type port) {
+	invalid();
 
-    m_socket = socket;
-    if(socket != -1){
-        m_port = port;
-        m_addr = addr;
-    }
+	m_socket = socket;
+	if (socket != -1) {
+		m_port = port;
+		m_addr = addr;
+	}
 }
 
 bool DefaultSocket::open()
@@ -45,7 +50,11 @@ bool DefaultSocket::close()
 {
 	CHECK_OPERATION_EXCEPTION(isOpen());
 
+#if defined(_WIN32) || defined(_WIN64)
+	int r = ::closesocket(m_socket);
+#elif defined(linux) || defined(__APPLE__)
 	int r = ::close(m_socket);
+#endif
 
 	if (r == 0)		// 后置条件：成功关闭将状态置为 invalid
 		invalid();
@@ -55,7 +64,7 @@ bool DefaultSocket::close()
 
 string DefaultSocket::read(int read_byte)
 {
-    CHECK_PARAMETER_EXCEPTION(read_byte > 0);
+	CHECK_PARAMETER_EXCEPTION(read_byte > 0);
 	CHECK_OPERATION_EXCEPTION(isOpen());
 
 	string ret;
@@ -64,40 +73,57 @@ string DefaultSocket::read(int read_byte)
 	CHECK_NO_MEMORY_EXCEPTION(content);
 	content[0] = '\0';
 
-    size_t b = ::read(m_socket, content, read_byte);
-    content[(b >= 0 ? b : 0)] = '\0';
+#if defined(_WIN32) || defined(_WIN64)
+	size_t b = ::recv(m_socket, content, read_byte, 0);
+#elif defined(linux) || defined(__APPLE__)
+	size_t b = ::read(m_socket, content, read_byte);
+#endif
+
+	content[(b >= 0 ? b : 0)] = '\0';
 
 	ret.append(content);
 
-    free(content);
+	free(content);
 
 	return ret;
 }
 
 size_t DefaultSocket::write(const char* content)
 {
-    CHECK_PARAMETER_EXCEPTION(content);
-    CHECK_OPERATION_EXCEPTION(isOpen());
+	CHECK_PARAMETER_EXCEPTION(content);
+	CHECK_OPERATION_EXCEPTION(isOpen());
 
-    int write_byte = ::write(m_socket, content, strlen(content));
+#if defined(_WIN32) || defined(_WIN64)
+	int write_byte = ::send(m_socket, content, strlen(content),0);
+#elif defined(linux) || defined(__APPLE__)
+	int write_byte = ::write(m_socket, content, strlen(content));
+#endif
 
-    return write_byte;
+	return write_byte;
 }
 
 size_t DefaultSocket::read(char *buffer, int read_byte)
 {
-    CHECK_PARAMETER_EXCEPTION(buffer && read_byte > 0);
-    CHECK_OPERATION_EXCEPTION(isOpen());
+	CHECK_PARAMETER_EXCEPTION(buffer && read_byte > 0);
+	CHECK_OPERATION_EXCEPTION(isOpen());
 
-    return ::read(m_socket,buffer,read_byte);
+#if defined(_WIN32) || defined(_WIN64)
+	return ::recv(m_socket, buffer, read_byte, 0);
+#elif defined(linux) || defined(__APPLE__)
+	return ::read(m_socket, buffer, read_byte);
+#endif
 }
 
 size_t DefaultSocket::write(const char * buffer, size_t size)
 {
-    CHECK_PARAMETER_EXCEPTION(buffer && size > 0);
-    CHECK_OPERATION_EXCEPTION(isOpen());
+	CHECK_PARAMETER_EXCEPTION(buffer && size > 0);
+	CHECK_OPERATION_EXCEPTION(isOpen());
 
-    return ::write(m_socket,buffer,size);
+#if defined(_WIN32) || defined(_WIN64)
+	return ::send(m_socket, buffer, size, 0);
+#elif defined(linux) || defined(__APPLE__)
+	return ::write(m_socket, buffer, size);
+#endif
 }
 
 void DefaultSocket::invalid()
@@ -133,8 +159,8 @@ void DefaultSocket::updateAddrAndPort()
 {
 	struct sockaddr_in cli_addr;
 	socklen_t len = sizeof(cli_addr);
-    getsockname(m_socket, (struct sockaddr*)&cli_addr, &len);
+	getsockname(m_socket, (struct sockaddr*)&cli_addr, &len);
 
 	m_addr = inet_ntoa(cli_addr.sin_addr);
-    m_port = ntohs(cli_addr.sin_port);
+	m_port = ntohs(cli_addr.sin_port);
 }

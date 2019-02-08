@@ -1,4 +1,4 @@
-TARGET := client server natcheckerclient testserver master slave testslave testclient
+TARGET := client server natcheckerclientmain testserver master slave testslave testclient
 
 # 设置 shell，否则 echo -e 会出问题
 SHELL=/bin/bash

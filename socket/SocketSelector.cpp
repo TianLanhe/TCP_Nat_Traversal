@@ -57,7 +57,7 @@ int SocketSelector::_getfd(Socket *socket){
     return fd;
 }
 
-vector<Socket*> SocketSelector::select(double timeout){
+typename SocketSelector::SocketVector SocketSelector::select(double timeout){
     struct timeval to;
     struct timeval *ptrto;
 
