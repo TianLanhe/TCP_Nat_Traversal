@@ -8,7 +8,12 @@
 
 #include <vector>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <winsock.h>
+typedef int socklen_t;
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/select.h>
+#endif
 
 using namespace Lib;
 using namespace std;

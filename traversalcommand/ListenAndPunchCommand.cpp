@@ -5,8 +5,14 @@
 #include "../include/SmartPointer.h"
 #include "../socket/ReuseServerSocket.h"
 
-#include <sys/socket.h>
+#if defined(_WIN32) || defined(_WIN64)
+#include <WinSock2.h>
+typedef int socklen_t;
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/select.h>
+#include <sys/socket.h>
+#endif
+
 #include <thread>
 
 using namespace std;
@@ -19,7 +25,11 @@ void ListenAndPunchCommand::punching(ListenAndPunchCommand *command, ClientSocke
             socket->connect(destiny_ip,destiny_port);
         }else{	// 如果发生同时打开，连接上了，这里关闭 server socket 的读通道，且将 shouldPunch 置为 false
             command->shouldPunch = false;
-            shutdown(serverFd,SHUT_RD);
+#if defined(_WIN32) || defined(_WIN64)
+			::shutdown(serverFd, SD_RECEIVE);
+#elif defined(__linux__) || defined(__APPLE__)
+			::shutdown(serverFd, SHUT_RD);
+#endif
             break;
         }
         command->sleep(PUNCHING_INTEVAL);

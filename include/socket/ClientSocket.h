@@ -7,7 +7,7 @@ LIB_BEGIN
 
 class ClientSocket : public Socket
 {
-public:
+public:	// Window 下 connect 设置超时参数无效
     virtual bool connect(const ip_type& addr, port_type port, size_t trytime = 1,double timeout = 2.0) { return connect(addr.c_str(), port,trytime,timeout); }
     virtual bool connect(const char*, port_type, size_t trytime = 1,double timeout = 2.0) = 0;
 	virtual bool isConnected() const = 0;

@@ -1,4 +1,4 @@
-#include "../include/traversalcommand/TraversalCommand.h"
+#include "include/traversalcommand/TraversalCommand.h"
 #include "ConnectDirectlyCommand.h"
 #include "ConnectAroundCommand.h"
 #include "ConnectRandomlyCommand.h"
@@ -6,7 +6,12 @@
 #include "ListenAndPunchRandomlyCommand.h"
 #include "ListenDirectlyCommand.h"
 
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#elif defined(__linux__) || defined(__APPLE__)
 #include <unistd.h>
+#endif
 
 using namespace std;
 using namespace Lib;
@@ -27,7 +32,11 @@ using namespace Lib;
 #define ADDRESS_AND_PORT_DEPENDENT nat_type::ADDRESS_AND_PORT_DEPENDENT
 
 void TraversalCommand::sleep(double t){
+#if defined(_WIN32) || defined(_WIN64)
+	Sleep((DWORD)(t * 1000));
+#elif defined(__linux__) || defined(__APPLE__)
     usleep((int)(t*1000000));
+#endif
 }
 
 bool isNatType(const nat_type& natType,const map_type& mapType,const filter_type& filterType){

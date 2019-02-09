@@ -5,7 +5,6 @@
 #include "DefaultServerSocket.h"
 
 #include <cmath>
-#include <sys/select.h>
 #include <errno.h>
 
 using namespace std;
@@ -76,6 +75,7 @@ typename SocketSelector::SocketVector SocketSelector::select(double timeout){
         fd_set set;
         FD_ZERO(&set);
 
+		maxfd = -1;
         for(vector<Socket*>::size_type i=0;i<m_sockets.size();++i){
             fd = _getfd(m_sockets[i]);
 

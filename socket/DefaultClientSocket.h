@@ -50,6 +50,7 @@ protected:
     double _getMaxWaitTime() const { return 120.0; }
 
     size_t _getSleepTime() const { return 1 * 1000000; }
+	void _sleep() const;
 
 protected:
 	DefaultSocket m_socket;

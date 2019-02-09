@@ -1,5 +1,4 @@
 #include "SocketWriteSelector.h"
-#include <sys/select.h>
 
 using namespace Lib;
 

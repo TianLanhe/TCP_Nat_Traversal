@@ -64,11 +64,7 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t tryti
         ++try_time;
 
 		if (try_time != max_try_time)
-#if defined(_WIN32) || defined(_WIN64)
-			Sleep(_getSleepTime() / 1000);
-#elif defined(__linux__) || defined(__APPLE__)
-            usleep(_getSleepTime());		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
-#endif
+			_sleep();		// Review：有些套接字实现若connect失败则以后都会失败，需要关闭后重新打开套接字
 	}
 
     // 恢复之前的连接超时时间
@@ -87,9 +83,19 @@ bool DefaultClientSocket::connect(const char* addr, port_type port, size_t tryti
 	return true;
 }
 
+void DefaultClientSocket::_sleep()const {
+#if defined(_WIN32) || defined(_WIN64)
+	Sleep(_getSleepTime() / 1000);	// millisecond
+#elif defined(__linux__) || defined(__APPLE__)
+	usleep(_getSleepTime());		// microsecond
+#endif
+}
+
 bool DefaultClientSocket::setNonBlock(bool flag){
 #if defined(_WIN32) || defined(_WIN64)
-	return true;
+	unsigned long ul = (flag ? 1 : 0);
+	int f = ioctlsocket(m_socket._socket(), FIONBIO, (unsigned long *)&ul);
+	return f != SOCKET_ERROR;
 #elif defined(__linux__) || defined(__APPLE__)
     int f = fcntl(m_socket._socket(),F_GETFL,0);
 

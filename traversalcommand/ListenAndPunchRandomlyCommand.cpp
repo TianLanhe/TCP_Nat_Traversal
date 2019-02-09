@@ -3,13 +3,19 @@
 #include "../socket/ReuseServerSocket.h"
 #include "../socket/ReuseClientSocket.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <WinSock2.h>
+typedef int socklen_t;
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/select.h>
+#include <sys/socket.h>
+#endif
+
 #include <thread>
 #include <cstdlib>
 #include <ctime>
 #include <vector>
 #include <algorithm>
-#include <sys/socket.h>
 
 using namespace std;
 using namespace Lib;
@@ -47,7 +53,11 @@ void ListenAndPunchRandomlyCommand::punching(ListenAndPunchRandomlyCommand* comm
     while(command->shouldPunch){
         for(int i=0;i<size;++i){
             if(clients[i]->connect(destiny_ip,destiny_port)){
-                ::shutdown(fd,SHUT_RD);
+#if defined(_WIN32) || defined(_WIN64)
+				::shutdown(fd, SD_RECEIVE);
+#elif defined(__linux__) || defined(__APPLE__)
+				::shutdown(fd, SHUT_RD);
+#endif
                 command->shouldPunch = false;
                 break;
             }

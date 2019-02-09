@@ -2,13 +2,21 @@
 #include "../socket/ReuseClientSocket.h"
 #include "../include/SmartPointer.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <winsock.h>
+typedef int socklen_t;
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/select.h>
-#include <errno.h>
 #include <sys/socket.h>
+#endif
+#include <errno.h>
+
+#include <vector>
 
 extern int errno;
 
 using namespace Lib;
+using namespace std;
 
 ClientSocket* ConnectAroundCommand::traverse(const TransmissionData &data, const ip_type &ip, port_type port){
     if(!data.isMember(DESTINY_IP) || !data.isMember(DESTINY_PORT) ||
@@ -35,7 +43,7 @@ ClientSocket* ConnectAroundCommand::traverse(const TransmissionData &data, const
     int maxfd = -1;
     int fd;
 
-    SmartPointer<ReuseClientSocket> sockets[try_time];
+    vector<SmartPointer<ReuseClientSocket>> sockets(try_time);
     for(int i=0;i<try_time;++i){				// 创建 try_time 个 client socket 绑定相同的源端口，并将每个 socket 添加到 fd_set 中
         sockets[i].reset(new ReuseClientSocket());
 
@@ -76,7 +84,7 @@ ClientSocket* ConnectAroundCommand::traverse(const TransmissionData &data, const
         socklen_t len = sizeof(int);
         for(int i=0;i<try_time;++i){
             if(FD_ISSET(sockets[i].get()->_getfd(),&set)){
-                ::getsockopt(sockets[i].get()->_getfd(),SOL_SOCKET,SO_ERROR,&error,&len);
+                ::getsockopt(sockets[i].get()->_getfd(),SOL_SOCKET,SO_ERROR,(char*)&error,&len);
 
                 if(error == 0){
                 	sockets[i]->setNonBlock(false);			// 恢复阻塞属性

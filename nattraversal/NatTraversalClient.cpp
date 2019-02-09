@@ -1,21 +1,22 @@
-#include "../include/nattraversal/NatTraversalClient.h"
-#include "../include/socket/ClientSocket.h"
-#include "../include/transmission/TransmissionData.h"
-#include "../include/transmission/TransmissionProxy.h"
-#include "../include/natchecker/NatCheckerClient.h"
-#include "../socket/DefaultClientSocket.h"
-#include "../include/traversalcommand/TraversalCommand.h"
-#include "../include/Utility.h"
+#include "include/nattraversal/NatTraversalClient.h"
+#include "include/socket/ClientSocket.h"
+#include "include/socket/DefaultSocketFactory.h"
+#include "include/transmission/TransmissionData.h"
+#include "include/transmission/TransmissionProxy.h"
+#include "include/natchecker/NatCheckerClient.h"
+#include "include/traversalcommand/TraversalCommand.h"
 #include "NatTraversalCommon.h"
-
-#include <sys/select.h>
+#include "include/Utility.h"
+#include "include/socket/SocketSelector.h"
+#include "include/socket/SocketSelectorFactory.h"
+#include "include/Exception.h"
 
 using namespace std;
 using namespace Lib;
 
 NatTraversalClient::NatTraversalClient(const std::string& identifier):m_identifier(identifier),
     m_isReady(false),m_isConnecting(false){
-    m_socket = new DefaultClientSocket();
+    m_socket = DefaultSocketFactory::GetInstance()->GetClientSocket();
 }
 
 NatTraversalClient::~NatTraversalClient(){
@@ -178,7 +179,31 @@ ClientSocket* NatTraversalClient::waitForPeerHost(){
             return NULL;
     }
 
-    DefaultClientSocket *defaultClientSocket = dynamic_cast<DefaultClientSocket*>(m_socket);
+	SocketSelector *selector = SocketSelectorFactory::GetInstance()->GetReadSelector();
+	selector->add(m_socket);
+	while (1) {
+		SocketSelector::SocketVector vecSockets = selector->select();
+		CHECK_STATE_EXCEPTION(vecSockets.size() == 1 && vecSockets[0] == m_socket);
+
+		if (isReadyToAccept()) {
+			TransmissionProxy proxy(m_socket);
+			TransmissionData data = proxy.read();
+
+			delete selector;
+
+			if (!data.isMember(STUN_IP) || !data.isMember(STUN_PORT))
+				return NULL;
+
+			return _checkNatTypeAndConnect(data.getString(STUN_IP), data.getInt(STUN_PORT));
+		}
+		else {
+			unique_lock<mutex> lck(m_mutex);
+			while (!m_isReady)
+				m_conVar.wait(lck);
+		}
+	}
+
+    /*DefaultClientSocket *defaultClientSocket = dynamic_cast<DefaultClientSocket*>(m_socket);
     if(defaultClientSocket == NULL)
     	return NULL;
 
@@ -211,5 +236,5 @@ ClientSocket* NatTraversalClient::waitForPeerHost(){
                     m_conVar.wait(lck);
             }
         }
-    }
+    }*/
 }

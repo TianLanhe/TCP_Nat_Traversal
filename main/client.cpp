@@ -5,6 +5,11 @@
 #include <string>
 #include <thread>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <winsock.h>
+#pragma comment(lib,"ws2_32.lib")
+#endif
+
 using namespace std;
 using namespace Lib;
 
@@ -34,6 +39,16 @@ int main(int argc,char *argv[]){
         cout << "Usage: " << argv[0] << " <Identify> <ServerIP> [ServerPort]" << endl;
         return 1;
     }
+
+#if defined(_WIN32) || defined(_WIN64)
+    WORD socket_version;
+    WSADATA wsadata;
+    socket_version = MAKEWORD(2, 2);
+    if (WSAStartup(socket_version, &wsadata) != 0){
+        cout << "WSAStartup error!" << endl;
+        return 1;
+    }
+#endif
 
     NatTraversalClient client(argv[1]);
 	

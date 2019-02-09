@@ -1,5 +1,4 @@
 #include "SocketReadSelector.h"
-#include <sys/select.h>
 
 using namespace Lib;
 
