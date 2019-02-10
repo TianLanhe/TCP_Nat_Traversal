@@ -24,14 +24,14 @@ void echoSocketAddr(ClientSocket *socket){
 
 void func(){
 	ClientSocket *socket;
-	socket = ext_client->waitForPeerHost();
-	
-	if(socket == NULL){
-		cout << "waitForPeerHost return NULL" << endl;
-		return;
+	while (1) {
+		socket = ext_client->waitForPeerHost();
+
+		if (socket)
+			echoSocketAddr(socket);
+		else
+			cout << "waitForPeerHost return NULL" << endl;
 	}
-	
-	echoSocketAddr(socket);
 }
 
 int main(int argc,char *argv[]){

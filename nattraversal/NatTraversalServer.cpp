@@ -255,6 +255,9 @@ void NatTraversalServer::handle_connect_request(NatTraversalServer *m_traversal_
 
             Log(INFO) << "send traversal command to Client \"" << identifiers[1-firstSend] << "\"" << eol;
 
+            if(isReady)
+                (*userManager)[identifier].setReady(true);
+
             return;
 r:
             data.clear();
